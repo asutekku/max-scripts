@@ -521,216 +521,104 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
     
     -- Edge alignment global function
     global alignEdgesToAxisFn
-    fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
+fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
+(
+    -- Get current selected node
+    local theNode = $
+    
+    -- First calculate the average coordinate for the selected axis
+    local axisAvg = 0.0
+    local vertCount = 0
+    
+    -- Collect all unique vertices from all selected edges
+    local uniqueVerts = #{}
+    
+    for e in selectedEdges do
     (
-        -- Get current selected node
-        local theNode = $
+        local verts = getPolyEdgeVerts currentMod e
+        if not uniqueVerts[verts[1]] do uniqueVerts[verts[1]] = true
+        if not uniqueVerts[verts[2]] do uniqueVerts[verts[2]] = true
+    )
+    
+    -- Calculate average position on the selected axis
+    for v in uniqueVerts do
+    (
+        local pos
         
-        -- Group connected edges
-        local edgeGroups = groupConnectedEdges currentMod selectedEdges
+        if useWorldSpace and theNode != undefined then
+            pos = (getPolyVert currentMod v) * theNode.transform
+        else
+            pos = getPolyVert currentMod v
         
-        -- Process each group of edges
-        for edgeGroup in edgeGroups do
+        -- Add coordinate based on the axis we're aligning to
+        case axisNum of
         (
-            if edgeGroup.count == 1 then
+            1: axisAvg += pos.x  -- X axis
+            2: axisAvg += pos.y  -- Y axis
+            3: axisAvg += pos.z  -- Z axis
+        )
+        
+        vertCount += 1
+    )
+    
+    -- Calculate average
+    if vertCount > 0 then axisAvg /= vertCount
+    
+    -- Now update all vertices positions for the selected edges
+    for e in selectedEdges do
+    (
+        -- Get the edge vertices
+        local verts = getPolyEdgeVerts currentMod e
+        
+        -- Process each vertex of the edge
+        for v in verts do
+        (
+            local pos, newPos
+            
+            if useWorldSpace and theNode != undefined then
             (
-                -- Single edge case - use existing method
-                local e = edgeGroup[1]
+                -- World space positions
+                pos = (getPolyVert currentMod v) * theNode.transform
                 
-                -- Get the edge vertices
-                local verts = getPolyEdgeVerts currentMod e
-                
-                -- Get vertex positions (in appropriate space)
-                local pos1, pos2
-                
-                if useWorldSpace and theNode != undefined then
-                (
-                    -- World space positions
-                    pos1 = (getPolyVert currentMod verts[1]) * theNode.transform
-                    pos2 = (getPolyVert currentMod verts[2]) * theNode.transform
-                )
-                else
-                (
-                    -- Local space positions
-                    pos1 = getPolyVert currentMod verts[1]
-                    pos2 = getPolyVert currentMod verts[2]
-                )
-                
-                -- Calculate edge center point (we'll keep this fixed)
-                local centerPoint = (pos1 + pos2) / 2.0
-                
-                -- Calculate current edge vector and length
-                local edgeVec = pos2 - pos1
-                local edgeLength = length edgeVec
-                
-                -- Determine vertex ordering based on the target axis
-                local v1IsFirst = case axisNum of
-                (
-                    1: (pos1.x <= pos2.x) -- For X-axis, compare X coordinates
-                    2: (pos1.y <= pos2.y) -- For Y-axis, compare Y coordinates
-                    3: (pos1.z <= pos2.z) -- For Z-axis, compare Z coordinates
-                    default: true
-                )
-                
-                -- Create new vector aligned to desired axis, maintaining length
-                local newVec = [0, 0, 0]
-                
+                -- Create new position by setting only the specific axis to average
+                newPos = pos
                 case axisNum of
                 (
-                    1: newVec = [edgeLength, 0, 0] -- X axis
-                    2: newVec = [0, edgeLength, 0] -- Y axis
-                    3: newVec = [0, 0, edgeLength] -- Z axis
+                    1: newPos.x = axisAvg -- X alignment
+                    2: newPos.y = axisAvg -- Y alignment
+                    3: newPos.z = axisAvg -- Z alignment
                 )
                 
-                -- Calculate new vertex positions preserving original order
-                local newPos1, newPos2
-                
-                if v1IsFirst then
-                (
-                    newPos1 = centerPoint - (newVec / 2.0)
-                    newPos2 = centerPoint + (newVec / 2.0)
-                )
-                else
-                (
-                    newPos2 = centerPoint - (newVec / 2.0)
-                    newPos1 = centerPoint + (newVec / 2.0)
-                )
-                
-                -- Convert back to local space if needed and update vertex positions
-                if useWorldSpace and theNode != undefined then
-                (
-                    newPos1 = newPos1 * (inverse theNode.transform)
-                    newPos2 = newPos2 * (inverse theNode.transform)
-                )
-                
-                -- Update vertex positions
-                setPolyVert currentMod verts[1] newPos1
-                setPolyVert currentMod verts[2] newPos2
+                -- Convert back to local space
+                newPos = newPos * (inverse theNode.transform)
             )
             else
             (
-                -- Multiple connected edges case
-                local allVerts = #()
-                local uniqueVerts = #{}
+                -- Local space positions
+                pos = getPolyVert currentMod v
                 
-                -- Collect all unique vertices from all edges in the group
-                for e in edgeGroup do
+                -- Create new position by setting only the specific axis to average
+                newPos = pos
+                case axisNum of
                 (
-                    local verts = getPolyEdgeVerts currentMod e
-                    if not uniqueVerts[verts[1]] do
-                    (
-                        append allVerts verts[1]
-                        uniqueVerts[verts[1]] = true
-                    )
-                    if not uniqueVerts[verts[2]] do
-                    (
-                        append allVerts verts[2]
-                        uniqueVerts[verts[2]] = true
-                    )
-                )
-                
-                -- Calculate center point and bounding box of all vertices in appropriate space
-                local centerPoint = [0,0,0]
-                local minPoint = [1e9, 1e9, 1e9]
-                local maxPoint = [-1e9, -1e9, -1e9]
-                
-                for v in allVerts do
-                (
-                    local pos
-                    
-                    if useWorldSpace and theNode != undefined then
-                        pos = (getPolyVert currentMod v) * theNode.transform
-                    else
-                        pos = getPolyVert currentMod v
-                    
-                    centerPoint += pos
-                    
-                    -- Use if statements instead of max/min functions
-                    if pos.x < minPoint.x then minPoint.x = pos.x
-                    if pos.y < minPoint.y then minPoint.y = pos.y
-                    if pos.z < minPoint.z then minPoint.z = pos.z
-                    
-                    if pos.x > maxPoint.x then maxPoint.x = pos.x
-                    if pos.y > maxPoint.y then maxPoint.y = pos.y
-                    if pos.z > maxPoint.z then maxPoint.z = pos.z
-                )
-                
-                centerPoint /= allVerts.count
-                
-                -- Calculate axis-aligned vector
-                local axisVector = case axisNum of
-                (
-                    1: [1, 0, 0] -- X axis
-                    2: [0, 1, 0] -- Y axis
-                    3: [0, 0, 1] -- Z axis
-                    default: [1, 0, 0]
-                )
-                
-                -- Calculate lengths for each axis
-                local lengthX = maxPoint.x - minPoint.x
-                local lengthY = maxPoint.y - minPoint.y
-                local lengthZ = maxPoint.z - minPoint.z
-                
-                -- Find endpoints in the selected axis direction
-                local endpoint1 = minPoint
-                local endpoint2 = maxPoint
-                
-                -- Project all vertices onto the selected axis while preserving their relative positions
-                for v in allVerts do
-                (
-                    local pos, newPos
-                    
-                    if useWorldSpace and theNode != undefined then
-                        pos = (polyOp.getVert currentMod v) * theNode.transform
-                    else
-                        pos = polyOp.getVert currentMod v
-                    
-                    local normalizedOffset = [0,0,0]
-                    
-                    -- Calculate normalized position within bounding box (0-1 range)
-                    case axisNum of
-                    (
-                        1: normalizedOffset.x = (pos.x - minPoint.x) / (if lengthX != 0 then lengthX else 1.0)
-                        2: normalizedOffset.y = (pos.y - minPoint.y) / (if lengthY != 0 then lengthY else 1.0)
-                        3: normalizedOffset.z = (pos.z - minPoint.z) / (if lengthZ != 0 then lengthZ else 1.0)
-                    )
-                    
-                    -- Calculate new aligned position
-                    newPos = pos
-                    
-                    case axisNum of
-                    (
-                        1: ( -- X alignment
-                            newPos.y = centerPoint.y
-                            newPos.z = centerPoint.z
-                        )
-                        2: ( -- Y alignment
-                            newPos.x = centerPoint.x
-                            newPos.z = centerPoint.z
-                        )
-                        3: ( -- Z alignment
-                            newPos.x = centerPoint.x
-                            newPos.y = centerPoint.y
-                        )
-                    )
-                    
-                    -- Convert back to local space if needed
-                    if useWorldSpace and theNode != undefined then
-                        newPos = newPos * (inverse theNode.transform)
-                    
-                    -- Update vertex position
-                    setPolyVert currentMod v newPos
+                    1: newPos.x = axisAvg -- X alignment
+                    2: newPos.y = axisAvg -- Y alignment
+                    3: newPos.z = axisAvg -- Z alignment
                 )
             )
+            
+            -- Update vertex position
+            setPolyVert currentMod v newPos
         )
-        
-        -- Update the mesh without using update function
-        setPolyEdgeSelection currentMod selectedEdges
-        
-        -- Force viewport update with correct commands
-        redrawViews()
-        completeRedraw()
     )
+    
+    -- Update the mesh
+    setPolyEdgeSelection currentMod selectedEdges
+    
+    -- Force viewport update
+    redrawViews()
+    completeRedraw()
+)
     
     -- Face alignment global function
     global alignFacesToAxisFn
@@ -1121,6 +1009,9 @@ rollout AlignToolsAbout "About"
  
  on btnHelp pressed do
  (
+   -- You could implement help functionality here, such as:
+   -- Opening a webpage, showing a help dialog, etc.
+   -- For now, just show a messagebox
    messageBox "Visit the GitHub repository for full documentation and examples.\n\nQuick Guide:\n- Select elements in Editable Poly mode\n- Use the appropriate alignment tools\n- Use the space toggle for local/world space operations" title:"Align Tools Help" beep:false
  )
 )
