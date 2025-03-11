@@ -20,6 +20,8 @@ A collection of productivity and workflow enhancement scripts for Autodesk 3ds M
 
 ### Align Tools
 
+![Align Tools Screenshot](images/snaptools.png)
+
 A comprehensive alignment utility that provides precise control over the alignment of mesh components in 3ds Max.
 
 #### Features
