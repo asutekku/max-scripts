@@ -3,42 +3,224 @@
 -- Created: March 2025
 -- File: alignTools.ms
 
+-- Global wrapper functions to work with both Editable_Poly and Edit_Poly
+global getPolyVert
+fn getPolyVert polyMod vertIndex =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getVert polyMod vertIndex)
+    else if classOf polyMod == Edit_Poly then
+        return (polyMod.GetVertex vertIndex)
+    else
+        return [0,0,0]
+)
+
+global setPolyVert
+fn setPolyVert polyMod vertIndex newPos =
+(
+    if classOf polyMod == Editable_Poly then
+        polyOp.setVert polyMod vertIndex newPos
+    else if classOf polyMod == Edit_Poly then
+        polyMod.SetVertex vertIndex newPos
+)
+
+global getPolyVertSelection
+fn getPolyVertSelection polyMod =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getVertSelection polyMod)
+    else if classOf polyMod == Edit_Poly then
+        return (polyMod.GetSelection #Vertex)
+)
+
+global setPolyVertSelection
+fn setPolyVertSelection polyMod selection =
+(
+    if classOf polyMod == Editable_Poly then
+        polyOp.setVertSelection polyMod selection
+    else if classOf polyMod == Edit_Poly then
+        polyMod.SetSelection #Vertex selection
+)
+
+global getPolyEdgeSelection
+fn getPolyEdgeSelection polyMod =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getEdgeSelection polyMod)
+    else if classOf polyMod == Edit_Poly then
+        return (polyMod.GetSelection #Edge)
+)
+
+global setPolyEdgeSelection
+fn setPolyEdgeSelection polyMod selection =
+(
+    if classOf polyMod == Editable_Poly then
+        polyOp.setEdgeSelection polyMod selection
+    else if classOf polyMod == Edit_Poly then
+        polyMod.SetSelection #Edge selection
+)
+
+global getPolyEdgeVerts
+fn getPolyEdgeVerts polyMod edgeIndex =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getEdgeVerts polyMod edgeIndex)
+    else if classOf polyMod == Edit_Poly then
+    (
+        -- For Edit_Poly, get both vertices of the edge
+        local v1 = polyMod.GetEdgeVertex edgeIndex 1
+        local v2 = polyMod.GetEdgeVertex edgeIndex 2
+        return #(v1, v2)
+    )
+    else
+        return #()
+)
+
+global getPolyFaceSelection
+fn getPolyFaceSelection polyMod =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getFaceSelection polyMod)
+    else if classOf polyMod == Edit_Poly then
+        return (polyMod.GetSelection #Face)
+)
+
+global setPolyFaceSelection
+fn setPolyFaceSelection polyMod selection =
+(
+    if classOf polyMod == Editable_Poly then
+        polyOp.setFaceSelection polyMod selection
+    else if classOf polyMod == Edit_Poly then
+        polyMod.SetSelection #Face selection
+)
+
+global getPolyFaceVerts
+fn getPolyFaceVerts polyMod faceIndex =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getFaceVerts polyMod faceIndex)
+    else if classOf polyMod == Edit_Poly then
+    (
+        -- For Edit_Poly, we need to get vertices one by one
+        local vertDegree = polyMod.GetFaceDegree faceIndex
+        local vertArray = #()
+        
+        for i = 1 to vertDegree do
+        (
+            local vertIndex = polyMod.GetFaceVertex faceIndex i
+            append vertArray vertIndex
+        )
+        
+        return vertArray
+    )
+    else
+        return #()
+)
+
+global getPolyFaceEdges
+fn getPolyFaceEdges polyMod faceIndex =
+(
+    if classOf polyMod == Editable_Poly then
+        return (polyOp.getFaceEdges polyMod faceIndex)
+    else if classOf polyMod == Edit_Poly then
+    (
+        -- For Edit_Poly, we need to get edges one by one
+        local edgeDegree = polyMod.GetFaceDegree faceIndex
+        local edgeArray = #()
+        
+        for i = 1 to edgeDegree do
+        (
+            local edgeIndex = polyMod.GetFaceEdge faceIndex i
+            append edgeArray edgeIndex
+        )
+        
+        return edgeArray
+    )
+    else
+        return #()
+)
+
+-- Create custom category and register tool
+macroScript AlignTools
+category:"Nimikko"
+toolTip:"Align Tools" 
+buttonText:"Align Tools"
+(
+    on execute do
+    (
+        fileIn (getSourceFileName())
+    )
+)
+
 rollout AlignToolsRollout "Align Tools" width:250 height:420
 (
+	group "Vertex: Snap to grid"
+    (
+		dropdownList ddlGridAxes "Snap:" items:#("X", "Y", "Z", "XY", "XZ", "YZ", "XYZ") selection:7 width:120 align:#left toolTip:"Select which axes to snap to grid"
+        spinner spnGridSize "Grid Size:" range:[0.1, 10000, 10] width:120 height:16 align:#left toolTip:"Set the grid size for snapping operations"
+        button btnSnapToGrid "Snap" width:200 height:30 align:#center toolTip:"Snap selected vertices to the grid"
+    )
+	
     group "Vertex: Align selection to:"
     (
-        button btnVertexAlignX "X" width:60 height:30 across:3
-        button btnVertexAlignY "Y" width:60 height:30
-        button btnVertexAlignZ "Z" width:60 height:30
-    )
-    
-    group "Vertex: Snap to grid"
-    (
-        spinner spnGridSize "Grid Size:" range:[0.1, 1000, 10] width:120 height:16 across:2
-        dropdownList ddlGridAxes "Snap:" items:#("X", "Y", "Z", "XY", "XZ", "YZ", "XYZ") selection:7 width:120
-        button btnSnapToGrid "Snap" width:60 height:30 align:#right
+        button btnVertexAlignX "X" width:60 height:30 across:3 toolTip:"Align selected vertices to X axis"
+        button btnVertexAlignY "Y" width:60 height:30 toolTip:"Align selected vertices to Y axis"
+        button btnVertexAlignZ "Z" width:60 height:30 toolTip:"Align selected vertices to Z axis"
     )
     
     group "Edge: Align selection to:"
     (
-        button btnEdgeAlignX "X" width:60 height:30 across:3
-        button btnEdgeAlignY "Y" width:60 height:30
-        button btnEdgeAlignZ "Z" width:60 height:30
+        button btnEdgeAlignX "X" width:60 height:30 across:3 toolTip:"Align selected edges to X axis (preserves connected edges)"
+        button btnEdgeAlignY "Y" width:60 height:30 toolTip:"Align selected edges to Y axis (preserves connected edges)"
+        button btnEdgeAlignZ "Z" width:60 height:30 toolTip:"Align selected edges to Z axis (preserves connected edges)"
     )
     
     group "Face: Align selection to:"
     (
-        button btnFaceAlignX "X" width:60 height:30 across:3
-        button btnFaceAlignY "Y" width:60 height:30
-        button btnFaceAlignZ "Z" width:60 height:30
+        button btnFaceAlignX "X" width:60 height:30 across:3 toolTip:"Align selected faces to X axis (preserves connected faces)"
+        button btnFaceAlignY "Y" width:60 height:30 toolTip:"Align selected faces to Y axis (preserves connected faces)"
+        button btnFaceAlignZ "Z" width:60 height:30 toolTip:"Align selected faces to Z axis (preserves connected faces)"
     )
     
     group "Global Settings"
     (
-        radioButtons rdoGlobalSpace "Space:" labels:#("Local", "World") default:1
+        radioButtons rdoGlobalSpace "Space:" labels:#("Local", "World") default:1 align:#left toolTip:"Toggle between local object space and world space for all operations"
     )
     
     label lblStatus "" width:240 height:30
+    
+    -- Helper function to get the active Editable Poly or Edit Poly modifier
+    fn getActivePoly =
+    (
+        local thePoly = undefined
+        
+        -- Check if a node is selected
+        if $ != undefined then
+        (
+            -- Check if we're in a sub-object level
+            if subObjectLevel > 0 then
+            (
+                -- Try to get the current modifier
+                thePoly = modPanel.getCurrentObject()
+                
+                -- If not a valid poly object, check if the current object is an Editable Poly
+                if thePoly == undefined or (classOf thePoly != Edit_Poly and classOf thePoly != Editable_Poly) then
+                (
+                    -- Check if the selected node is an Editable_Poly
+                    if classOf $ == Editable_Poly then
+                        thePoly = $
+                )
+            )
+            else
+            (
+                -- Not in subobject mode, check if the selected node is an Editable_Poly
+                if classOf $ == Editable_Poly then
+                    thePoly = $
+            )
+        )
+        
+        return thePoly
+    )
     
     -- Global functions to avoid scoping issues with anonymous blocks
     
@@ -56,7 +238,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
             (
                 -- WORLD SPACE APPROACH
                 -- Get vertex in object space
-                local objectPos = polyOp.getVert currentMod v
+                local objectPos = getPolyVert currentMod v
                 
                 -- Convert to world space using object's transform
                 local worldPos = (objectPos * theNode.transform)
@@ -75,13 +257,13 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 local newObjectPos = newWorldPos * (inverse theNode.transform)
                 
                 -- Update vertex position
-                polyOp.setVert currentMod v newObjectPos
+                setPolyVert currentMod v newObjectPos
             )
             else
             (
                 -- LOCAL SPACE APPROACH
                 -- Get current vertex position
-                local pos = polyOp.getVert currentMod v
+                local pos = getPolyVert currentMod v
                 
                 -- Create new position by setting specific axis to average
                 local newPos = pos
@@ -94,12 +276,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 )
                 
                 -- Update vertex position
-                polyOp.setVert currentMod v newPos
+                setPolyVert currentMod v newPos
             )
         )
         
         -- Update the mesh
-        polyOp.setVertSelection currentMod selectedVerts
+        setPolyVertSelection currentMod selectedVerts
         
         -- Force viewport update
         redrawViews()
@@ -122,7 +304,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
             (
                 -- WORLD SPACE APPROACH
                 -- Get vertex in object space
-                local objectPos = polyOp.getVert currentMod v
+                local objectPos = getPolyVert currentMod v
                 
                 -- Convert to world space using object's transform
                 local worldPos = (objectPos * theNode.transform)
@@ -169,21 +351,21 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 local newObjectPos = newWorldPos * (inverse theNode.transform)
                 
                 -- Set the vertex back in object space
-                polyOp.setVert currentMod v newObjectPos
+                setPolyVert currentMod v newObjectPos
                 
                 -- Debug logs
-                format "==== WORLD SPACE SNAPPING ====\n"
-                format "Vertex: %\n" v
-                format "Object pos: [%, %, %]\n" objectPos.x objectPos.y objectPos.z
-                format "World pos: [%, %, %]\n" worldPos.x worldPos.y worldPos.z
-                format "Snapped world: [%, %, %]\n" newWorldX newWorldY newWorldZ
-                format "New object pos: [%, %, %]\n\n" newObjectPos.x newObjectPos.y newObjectPos.z
+                --format "==== WORLD SPACE SNAPPING ====\n"
+                --format "Vertex: %\n" v
+                --format "Object pos: [%, %, %]\n" objectPos.x objectPos.y objectPos.z
+                --format "World pos: [%, %, %]\n" worldPos.x worldPos.y worldPos.z
+                --format "Snapped world: [%, %, %]\n" newWorldX newWorldY newWorldZ
+                --format "New object pos: [%, %, %]\n\n" newObjectPos.x newObjectPos.y newObjectPos.z
             )
             else
             (
                 -- LOCAL SPACE APPROACH
                 -- Get vertex position in local space
-                local pos = polyOp.getVert currentMod v
+                local pos = getPolyVert currentMod v
                 
                 -- Get coordinates
                 local x = pos.x
@@ -223,18 +405,18 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 local newPos = point3 newX newY newZ
                 
                 -- Set the vertex
-                polyOp.setVert currentMod v newPos
+                setPolyVert currentMod v newPos
                 
                 -- Debug logs
-                format "==== LOCAL SPACE SNAPPING ====\n"
-                format "Vertex: %\n" v
-                format "Local pos: [%, %, %]\n" x y z
-                format "New local pos: [%, %, %]\n\n" newX newY newZ
+                --format "==== LOCAL SPACE SNAPPING ====\n"
+                --format "Vertex: %\n" v
+                --format "Local pos: [%, %, %]\n" x y z
+                --format "New local pos: [%, %, %]\n\n" newX newY newZ
             )
         )
         
         -- Update the mesh
-        polyOp.setVertSelection currentMod selectedVerts
+        setPolyVertSelection currentMod selectedVerts
         
         -- Force viewport update
         redrawViews()
@@ -260,12 +442,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 deleteItem edgesToCheck 1
                 
                 -- Get vertices for current edge
-                local verts = polyOp.getEdgeVerts currentMod currentEdge
+                local verts = getPolyEdgeVerts currentMod currentEdge
                 
                 -- Find other selected edges that share these vertices
                 for testEdge in selectedEdges where not (processedEdges[testEdge]) do
                 (
-                    local testVerts = polyOp.getEdgeVerts currentMod testEdge
+                    local testVerts = getPolyEdgeVerts currentMod testEdge
                     
                     -- Check if edges share a vertex
                     if (testVerts[1] == verts[1] or testVerts[1] == verts[2] or 
@@ -303,12 +485,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 deleteItem facesToCheck 1
                 
                 -- Get edges for current face
-                local faceEdges = polyOp.getFaceEdges currentMod currentFace
+                local faceEdges = getPolyFaceEdges currentMod currentFace
                 
                 -- Find other selected faces that share these edges
                 for testFace in selectedFaces where not (processedFaces[testFace]) do
                 (
-                    local testEdges = polyOp.getFaceEdges currentMod testFace
+                    local testEdges = getPolyFaceEdges currentMod testFace
                     local shareEdge = false
                     
                     -- Check if faces share an edge
@@ -356,7 +538,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 local e = edgeGroup[1]
                 
                 -- Get the edge vertices
-                local verts = polyOp.getEdgeVerts currentMod e
+                local verts = getPolyEdgeVerts currentMod e
                 
                 -- Get vertex positions (in appropriate space)
                 local pos1, pos2
@@ -364,14 +546,14 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 if useWorldSpace and theNode != undefined then
                 (
                     -- World space positions
-                    pos1 = (polyOp.getVert currentMod verts[1]) * theNode.transform
-                    pos2 = (polyOp.getVert currentMod verts[2]) * theNode.transform
+                    pos1 = (getPolyVert currentMod verts[1]) * theNode.transform
+                    pos2 = (getPolyVert currentMod verts[2]) * theNode.transform
                 )
                 else
                 (
                     -- Local space positions
-                    pos1 = polyOp.getVert currentMod verts[1]
-                    pos2 = polyOp.getVert currentMod verts[2]
+                    pos1 = getPolyVert currentMod verts[1]
+                    pos2 = getPolyVert currentMod verts[2]
                 )
                 
                 -- Calculate edge center point (we'll keep this fixed)
@@ -422,8 +604,8 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 )
                 
                 -- Update vertex positions
-                polyOp.setVert currentMod verts[1] newPos1
-                polyOp.setVert currentMod verts[2] newPos2
+                setPolyVert currentMod verts[1] newPos1
+                setPolyVert currentMod verts[2] newPos2
             )
             else
             (
@@ -434,7 +616,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 -- Collect all unique vertices from all edges in the group
                 for e in edgeGroup do
                 (
-                    local verts = polyOp.getEdgeVerts currentMod e
+                    local verts = getPolyEdgeVerts currentMod e
                     if not uniqueVerts[verts[1]] do
                     (
                         append allVerts verts[1]
@@ -457,9 +639,9 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                     local pos
                     
                     if useWorldSpace and theNode != undefined then
-                        pos = (polyOp.getVert currentMod v) * theNode.transform
+                        pos = (getPolyVert currentMod v) * theNode.transform
                     else
-                        pos = polyOp.getVert currentMod v
+                        pos = getPolyVert currentMod v
                     
                     centerPoint += pos
                     
@@ -537,13 +719,13 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                         newPos = newPos * (inverse theNode.transform)
                     
                     -- Update vertex position
-                    polyOp.setVert currentMod v newPos
+                    setPolyVert currentMod v newPos
                 )
             )
         )
         
         -- Update the mesh without using update function
-        polyOp.setEdgeSelection currentMod selectedEdges
+        setPolyEdgeSelection currentMod selectedEdges
         
         -- Force viewport update with correct commands
         redrawViews()
@@ -570,7 +752,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
             for f in faceGroup do
             (
                 -- Get the face vertices
-                local vertIndices = polyOp.getFaceVerts currentMod f
+                local vertIndices = getPolyFaceVerts currentMod f
                 
                 for v in vertIndices where not uniqueVerts[v] do
                 (
@@ -587,9 +769,9 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                 local pos
                 
                 if useWorldSpace and theNode != undefined then
-                    pos = (polyOp.getVert currentMod v) * theNode.transform
+                    pos = (getPolyVert currentMod v) * theNode.transform
                 else
-                    pos = polyOp.getVert currentMod v
+                    pos = getPolyVert currentMod v
                 
                 centerPoint += pos
             )
@@ -626,12 +808,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
                     projectedPos = projectedPos * (inverse theNode.transform)
                 
                 -- Set new vertex position
-                polyOp.setVert currentMod v projectedPos
+                setPolyVert currentMod v projectedPos
             )
         )
         
         -- Update the mesh
-        polyOp.setFaceSelection currentMod selectedFaces
+        setPolyFaceSelection currentMod selectedFaces
         
         -- Force viewport update
         redrawViews()
@@ -641,12 +823,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
     -- Function to align vertices to specified axis
     fn alignVerticesToAxis axisNum =
     (
-        -- Get the current EditablePoly/Edit_Poly modifier
-        local currentMod = modPanel.getCurrentObject()
+        -- Get the active poly object/modifier
+        local currentMod = getActivePoly()
         
         if currentMod == undefined then
         (
-            lblStatus.text = "Error: No Editable Poly selected"
+            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
             return false
         )
         
@@ -658,7 +840,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
         )
         
         -- Get selected vertices
-        local selectedVerts = polyOp.getVertSelection currentMod
+        local selectedVerts = getPolyVertSelection currentMod
         
         if selectedVerts.numberset == 0 then
         (
@@ -681,9 +863,9 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
             local pos
             
             if useWorldSpace and theNode != undefined then
-                pos = (polyOp.getVert currentMod v) * theNode.transform
+                pos = (getPolyVert currentMod v) * theNode.transform
             else
-                pos = polyOp.getVert currentMod v
+                pos = getPolyVert currentMod v
             
             avgPos += pos
             vertCount += 1
@@ -713,12 +895,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
     -- Function to snap vertices to grid
     fn snapVerticesToGrid gridSize =
     (
-        -- Get the current EditablePoly/Edit_Poly modifier
-        local currentMod = modPanel.getCurrentObject()
+        -- Get the active poly object/modifier
+        local currentMod = getActivePoly()
         
         if currentMod == undefined then
         (
-            lblStatus.text = "Error: No Editable Poly selected"
+            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
             return false
         )
         
@@ -730,7 +912,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
         )
         
         -- Get selected vertices
-        local selectedVerts = polyOp.getVertSelection currentMod
+        local selectedVerts = getPolyVertSelection currentMod
         
         if selectedVerts.numberset == 0 then
         (
@@ -772,12 +954,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
     -- Function to align each edge to specified axis
     fn alignEdgesToAxis axisNum =
     (
-        -- Get the current EditablePoly/Edit_Poly modifier
-        local currentMod = modPanel.getCurrentObject()
+        -- Get the active poly object/modifier
+        local currentMod = getActivePoly()
         
         if currentMod == undefined then
         (
-            lblStatus.text = "Error: No Editable Poly selected"
+            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
             return false
         )
         
@@ -789,7 +971,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
         )
         
         -- Get selected edges
-        local selectedEdges = polyOp.getEdgeSelection currentMod
+        local selectedEdges = getPolyEdgeSelection currentMod
         
         if selectedEdges.numberset == 0 then
         (
@@ -822,12 +1004,12 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
     -- Function to align each face to specified axis
     fn alignFacesToAxis axisNum =
     (
-        -- Get the current EditablePoly/Edit_Poly modifier
-        local currentMod = modPanel.getCurrentObject()
+        -- Get the active poly object/modifier
+        local currentMod = getActivePoly()
         
         if currentMod == undefined then
         (
-            lblStatus.text = "Error: No Editable Poly selected"
+            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
             return false
         )
         
@@ -839,7 +1021,7 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
         )
         
         -- Get selected faces
-        local selectedFaces = polyOp.getFaceSelection currentMod
+        local selectedFaces = getPolyFaceSelection currentMod
         
         if selectedFaces.numberset == 0 then
         (
@@ -933,8 +1115,14 @@ if (AlignToolsFloater != undefined) and (AlignToolsFloater.open) do
 -- about rollout
 rollout AlignToolsAbout "About"
 (
- label lab1 "Align Tools"
- label lab2 "by asutekku 2025"
+ label lab1 "Align Tools" toolTip:"Precision alignment utility for 3ds Max"
+ label lab2 "by asutekku 2025 for Nimikko" toolTip:"Visit github.com/asutekku/max-scripts for more tools"
+ button btnHelp "Help" width:80 height:25 toolTip:"Open readme and documentation"
+ 
+ on btnHelp pressed do
+ (
+   messageBox "Visit the GitHub repository for full documentation and examples.\n\nQuick Guide:\n- Select elements in Editable Poly mode\n- Use the appropriate alignment tools\n- Use the space toggle for local/world space operations" title:"Align Tools Help" beep:false
+ )
 )
 
 AlignToolsFloater = newRolloutFloater "Align Tools" 250 440

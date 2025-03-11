@@ -7,6 +7,7 @@ A collection of productivity and workflow enhancement scripts for Autodesk 3ds M
 ## Available Tools
 
 - [Align Tools](#align-tools) - Precision alignment utility for vertices, edges, and faces
+- [Collapse Dead Structs](#collapse-dead-structs) - Utility for cleaning up mesh topology by collapsing dead structures
 
 ## Installation
 
@@ -67,18 +68,46 @@ A comprehensive alignment utility that provides precise control over the alignme
 
 **Grid Snapping**: Essential for precision modeling, creating evenly spaced elements, or conforming models to scene grid.
 
-## Planned Features
+### Collapse Dead Structs
 
-- [ ] Support for multiple object selections
-- [ ] Alignment to custom reference planes
-- [ ] Alignment along edge/face normals
-- [ ] Distribution options for equally spacing vertices, edges, or objects
-- [ ] UI theme customization
+A utility for cleaning up mesh topology by removing dead or invalid structures in editable poly objects.
+
+#### Features
+
+- **Single Object Processing** - Collapse dead structures in the currently selected object
+- **Multiple Object Support** - Process multiple selected objects at once
+- **Batch Processing** - Option to process all editable poly objects in the scene
+- **Auto-Update Mode** - Automatically process objects when selection changes
+- **Status Feedback** - Visual feedback on processing success and errors
+
+#### Usage
+
+1. Select one or more editable poly objects
+2. Open the Collapse Dead Structs dialog from the Nimikko category in the MAXScript menu
+3. Choose the appropriate option:
+
+##### Single/Multiple Selection Processing
+- Click the "Collapse Selected" button to process the currently selected object(s)
+
+##### Batch Processing
+- Click the "Collapse All Editable Polys" button to process all editable poly objects in the scene
+
+##### Auto-Update Mode
+- Toggle the "Auto-Update" button to enable automatic processing when selection changes
+
+#### Examples
+
+**Post-Import Cleanup**: Useful for cleaning up models after importing from other software that may contain dead structures.
+
+**Post-Boolean Cleanup**: Essential for fixing mesh topology issues after boolean operations that often create dead structures.
+
+**General Maintenance**: Regular use helps maintain clean topology in complex models during the modeling process.
 
 ## Compatibility
 
 - Tested with 3ds Max 2024 & 2025
-- Compatible with Editable Poly objects. Does not work with edit poly modifier.
+- Align Tools: Compatible with Editable Poly objects. Does not work with edit poly modifier.
+- Collapse Dead Structs: Works with any Editable Poly object.
 
 ## Contributing
 
