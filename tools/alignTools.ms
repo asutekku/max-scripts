@@ -191,36 +191,65 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
     
     -- Helper function to get the active Editable Poly or Edit Poly modifier
     fn getActivePoly =
+(
+    local thePoly = undefined
+    local errorMessage = ""
+    
+    -- Check if a node is selected
+    if $ == undefined then
     (
-        local thePoly = undefined
-        
-        -- Check if a node is selected
-        if $ != undefined then
-        (
-            -- Check if we're in a sub-object level
-            if subObjectLevel > 0 then
-            (
-                -- Try to get the current modifier
-                thePoly = modPanel.getCurrentObject()
-                
-                -- If not a valid poly object, check if the current object is an Editable Poly
-                if thePoly == undefined or (classOf thePoly != Edit_Poly and classOf thePoly != Editable_Poly) then
-                (
-                    -- Check if the selected node is an Editable_Poly
-                    if classOf $ == Editable_Poly then
-                        thePoly = $
-                )
-            )
-            else
-            (
-                -- Not in subobject mode, check if the selected node is an Editable_Poly
-                if classOf $ == Editable_Poly then
-                    thePoly = $
-            )
-        )
-        
-        return thePoly
+        errorMessage = "Error: No object selected. Please select an object first."
+        return #(undefined, errorMessage)
     )
+    
+    -- Check if we're in a sub-object level
+    if subObjectLevel > 0 then
+    (
+        -- Try to get the current modifier
+        thePoly = modPanel.getCurrentObject()
+        
+        if thePoly == undefined then
+        (
+            errorMessage = "Error: No active modifier found. Make sure you're in sub-object mode."
+        )
+        else if classOf thePoly == Edit_Poly then
+        (
+            -- Explicitly reject Edit_Poly modifiers
+            errorMessage = "Error: Edit Poly modifier is not supported. Please convert to Editable Poly."
+            thePoly = undefined
+        )
+        else if classOf thePoly != Editable_Poly then
+        (
+            errorMessage = "Error: Active modifier is not Editable Poly. Found: " + (classOf thePoly as string)
+            thePoly = undefined
+        )
+    )
+    else
+    (
+        -- Not in subobject mode
+        if classOf $ == Editable_Poly then
+        (
+            thePoly = $
+        )
+        else
+        (
+            -- Check if it has an Edit_Poly modifier
+            local hasEditPoly = false
+            for m in $.modifiers where classOf m == Edit_Poly do
+            (
+                hasEditPoly = true
+                exit
+            )
+            
+            if hasEditPoly then
+                errorMessage = "Error: Object has Edit Poly modifier which is not supported. Please convert to Editable Poly."
+            else
+                errorMessage = "Error: Object is not an Editable Poly. Current type: " + (classOf $ as string)
+        )
+    )
+    
+    return #(thePoly, errorMessage)
+)
     
     -- Global functions to avoid scoping issues with anonymous blocks
     
@@ -519,96 +548,102 @@ rollout AlignToolsRollout "Align Tools" width:250 height:420
         return faceGroups
     )
     
-    -- Edge alignment global function
-    global alignEdgesToAxisFn
+global alignEdgesToAxisFn
 fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
 (
     -- Get current selected node
     local theNode = $
     
-    -- First calculate the average coordinate for the selected axis
-    local axisAvg = 0.0
-    local vertCount = 0
+    -- Group the edges into connected components
+    local edgeGroups = groupConnectedEdges currentMod selectedEdges
     
-    -- Collect all unique vertices from all selected edges
-    local uniqueVerts = #{}
-    
-    for e in selectedEdges do
+    -- Process each edge group separately
+    for edgeGroup in edgeGroups do
     (
-        local verts = getPolyEdgeVerts currentMod e
-        if not uniqueVerts[verts[1]] do uniqueVerts[verts[1]] = true
-        if not uniqueVerts[verts[2]] do uniqueVerts[verts[2]] = true
-    )
-    
-    -- Calculate average position on the selected axis
-    for v in uniqueVerts do
-    (
-        local pos
+        -- For this group, calculate the average coordinate for the selected axis
+        local axisAvg = 0.0
+        local vertCount = 0
         
-        if useWorldSpace and theNode != undefined then
-            pos = (getPolyVert currentMod v) * theNode.transform
-        else
-            pos = getPolyVert currentMod v
+        -- Collect all unique vertices from this edge group
+        local uniqueVerts = #{}
         
-        -- Add coordinate based on the axis we're aligning to
-        case axisNum of
+        for e in edgeGroup do
         (
-            1: axisAvg += pos.x  -- X axis
-            2: axisAvg += pos.y  -- Y axis
-            3: axisAvg += pos.z  -- Z axis
+            local verts = getPolyEdgeVerts currentMod e
+            if not uniqueVerts[verts[1]] do uniqueVerts[verts[1]] = true
+            if not uniqueVerts[verts[2]] do uniqueVerts[verts[2]] = true
         )
         
-        vertCount += 1
-    )
-    
-    -- Calculate average
-    if vertCount > 0 then axisAvg /= vertCount
-    
-    -- Now update all vertices positions for the selected edges
-    for e in selectedEdges do
-    (
-        -- Get the edge vertices
-        local verts = getPolyEdgeVerts currentMod e
-        
-        -- Process each vertex of the edge
-        for v in verts do
+        -- Calculate average position on the selected axis for this group only
+        for v in uniqueVerts do
         (
-            local pos, newPos
+            local pos
             
             if useWorldSpace and theNode != undefined then
-            (
-                -- World space positions
                 pos = (getPolyVert currentMod v) * theNode.transform
-                
-                -- Create new position by setting only the specific axis to average
-                newPos = pos
-                case axisNum of
-                (
-                    1: newPos.x = axisAvg -- X alignment
-                    2: newPos.y = axisAvg -- Y alignment
-                    3: newPos.z = axisAvg -- Z alignment
-                )
-                
-                -- Convert back to local space
-                newPos = newPos * (inverse theNode.transform)
-            )
             else
-            (
-                -- Local space positions
                 pos = getPolyVert currentMod v
-                
-                -- Create new position by setting only the specific axis to average
-                newPos = pos
-                case axisNum of
-                (
-                    1: newPos.x = axisAvg -- X alignment
-                    2: newPos.y = axisAvg -- Y alignment
-                    3: newPos.z = axisAvg -- Z alignment
-                )
+            
+            -- Add coordinate based on the axis we're aligning to
+            case axisNum of
+            (
+                1: axisAvg += pos.x  -- X axis
+                2: axisAvg += pos.y  -- Y axis
+                3: axisAvg += pos.z  -- Z axis
             )
             
-            -- Update vertex position
-            setPolyVert currentMod v newPos
+            vertCount += 1
+        )
+        
+        -- Calculate average for this group
+        if vertCount > 0 then axisAvg /= vertCount
+        
+        -- Now update all vertices positions for just this edge group
+        for e in edgeGroup do
+        (
+            -- Get the edge vertices
+            local verts = getPolyEdgeVerts currentMod e
+            
+            -- Process each vertex of the edge
+            for v in verts do
+            (
+                local pos, newPos
+                
+                if useWorldSpace and theNode != undefined then
+                (
+                    -- World space positions
+                    pos = (getPolyVert currentMod v) * theNode.transform
+                    
+                    -- Create new position by setting only the specific axis to average
+                    newPos = pos
+                    case axisNum of
+                    (
+                        1: newPos.x = axisAvg -- X alignment
+                        2: newPos.y = axisAvg -- Y alignment
+                        3: newPos.z = axisAvg -- Z alignment
+                    )
+                    
+                    -- Convert back to local space
+                    newPos = newPos * (inverse theNode.transform)
+                )
+                else
+                (
+                    -- Local space positions
+                    pos = getPolyVert currentMod v
+                    
+                    -- Create new position by setting only the specific axis to average
+                    newPos = pos
+                    case axisNum of
+                    (
+                        1: newPos.x = axisAvg -- X alignment
+                        2: newPos.y = axisAvg -- Y alignment
+                        3: newPos.z = axisAvg -- Z alignment
+                    )
+                )
+                
+                -- Update vertex position
+                setPolyVert currentMod v newPos
+            )
         )
     )
     
@@ -710,58 +745,73 @@ fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
     
     -- Function to align vertices to specified axis
     fn alignVerticesToAxis axisNum =
+(
+    -- Get current modifier/object
+    local theMod = modPanel.getCurrentObject()
+    
+    -- Check if we have an Edit_Poly modifier and return immediately with error
+    if theMod != undefined and classOf theMod == Edit_Poly then
     (
-        -- Get the active poly object/modifier
-        local currentMod = getActivePoly()
+        lblStatus.text = "Error: Edit Poly modifier is not supported. Please convert to Editable Poly."
+        return false
+    )
+    
+    -- Get the active poly object/modifier with error message
+    local polyResult = getActivePoly()
+    local currentMod = polyResult[1]
+    local errorMsg = polyResult[2]
+    
+    if currentMod == undefined then
+    (
+        lblStatus.text = errorMsg
+        return false
+    )
+    
+    -- Check if we're in vertex subobject mode
+    if (subObjectLevel != 1) then
+    (
+        lblStatus.text = "Error: Not in Vertex subobject mode"
+        return false
+    )
+    
+    -- Get selected vertices (safely)
+    local selectedVerts = getPolyVertSelection currentMod
+    
+    -- Check if selectedVerts is valid and has selections
+    if selectedVerts == undefined or selectedVerts.count == 0 then
+    (
+        lblStatus.text = "Error: No vertices selected"
+        return false
+    )
+    
+    -- Get space type (1=local, 2=world)
+    local useWorldSpace = (rdoGlobalSpace.state == 2)
+    
+    -- Calculate the average position of selected vertices
+    local avgPos = [0,0,0]
+    local vertCount = 0
+    
+    -- Get current selected node
+    local theNode = $
+    
+    for v in selectedVerts do
+    (
+        local pos
         
-        if currentMod == undefined then
-        (
-            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
-            return false
-        )
+        if useWorldSpace and theNode != undefined then
+            pos = (getPolyVert currentMod v) * theNode.transform
+        else
+            pos = getPolyVert currentMod v
         
-        -- Check if we're in vertex subobject mode
-        if (subObjectLevel != 1) then
-        (
-            lblStatus.text = "Error: Not in Vertex subobject mode"
-            return false
-        )
-        
-        -- Get selected vertices
-        local selectedVerts = getPolyVertSelection currentMod
-        
-        if selectedVerts.numberset == 0 then
-        (
-            lblStatus.text = "Error: No vertices selected"
-            return false
-        )
-        
-        -- Get space type (1=local, 2=world)
-        local useWorldSpace = (rdoGlobalSpace.state == 2)
-        
-        -- Calculate the average position of selected vertices
-        local avgPos = [0,0,0]
-        local vertCount = 0
-        
-        -- Get current selected node
-        local theNode = $
-        
-        for v in selectedVerts do
-        (
-            local pos
-            
-            if useWorldSpace and theNode != undefined then
-                pos = (getPolyVert currentMod v) * theNode.transform
-            else
-                pos = getPolyVert currentMod v
-            
-            avgPos += pos
-            vertCount += 1
-        )
-        
-        if vertCount > 0 then avgPos /= vertCount
-        
-        -- Use undo correctly for MAXScript
+        avgPos += pos
+        vertCount += 1
+    )
+    
+    if vertCount > 0 then avgPos /= vertCount
+    
+    -- Use undo correctly for MAXScript
+    try
+    (
         undo on
         (
             alignVerticesToAxisFn currentMod selectedVerts avgPos axisNum useWorldSpace
@@ -779,42 +829,64 @@ fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
         lblStatus.text = "Aligned vertices to " + axisName + " in " + spaceText + " space"
         return true
     )
+    catch
+    (
+        local errorText = getCurrentException()
+        lblStatus.text = "Error aligning vertices: " + errorText
+        return false
+    )
+)
     
     -- Function to snap vertices to grid
     fn snapVerticesToGrid gridSize =
+(
+    -- Get current modifier/object
+    local theMod = modPanel.getCurrentObject()
+    
+    -- Check if we have an Edit_Poly modifier and return immediately with error
+    if theMod != undefined and classOf theMod == Edit_Poly then
     (
-        -- Get the active poly object/modifier
-        local currentMod = getActivePoly()
-        
-        if currentMod == undefined then
-        (
-            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
-            return false
-        )
-        
-        -- Check if we're in vertex subobject mode
-        if (subObjectLevel != 1) then
-        (
-            lblStatus.text = "Error: Not in Vertex subobject mode"
-            return false
-        )
-        
-        -- Get selected vertices
-        local selectedVerts = getPolyVertSelection currentMod
-        
-        if selectedVerts.numberset == 0 then
-        (
-            lblStatus.text = "Error: No vertices selected"
-            return false
-        )
-        
-        -- Get axes selection from dropdown
-        local axesSelection = ddlGridAxes.selection
-        
-        -- Get space type (1=local, 2=world) from global setting
-        local useWorldSpace = (rdoGlobalSpace.state == 2)
-        
-        -- Use undo correctly for MAXScript
+        lblStatus.text = "Error: Edit Poly modifier is not supported. Please convert to Editable Poly."
+        return false
+    )
+    
+    -- Get the active poly object/modifier with error message
+    local polyResult = getActivePoly()
+    local currentMod = polyResult[1]
+    local errorMsg = polyResult[2]
+    
+    if currentMod == undefined then
+    (
+        lblStatus.text = errorMsg
+        return false
+    )
+    
+    -- Check if we're in vertex subobject mode
+    if (subObjectLevel != 1) then
+    (
+        lblStatus.text = "Error: Not in Vertex subobject mode"
+        return false
+    )
+    
+    -- Get selected vertices (safely)
+    local selectedVerts = getPolyVertSelection currentMod
+    
+    -- Check if selectedVerts is valid and has selections
+    if selectedVerts == undefined or selectedVerts.count == 0 then
+    (
+        lblStatus.text = "Error: No vertices selected"
+        return false
+    )
+    
+    -- Get axes selection from dropdown
+    local axesSelection = ddlGridAxes.selection
+    
+    -- Get space type (1=local, 2=world) from global setting
+    local useWorldSpace = (rdoGlobalSpace.state == 2)
+    
+    -- Use undo correctly for MAXScript
+    try
+    (
         undo on
         (
             snapVerticesToGridFn currentMod selectedVerts gridSize axesSelection useWorldSpace
@@ -838,39 +910,61 @@ fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
         lblStatus.text = "Snapped vertices to grid size " + gridSize as string + " on " + axesText + " in " + spaceText + " space"
         return true
     )
+    catch
+    (
+        local errorText = getCurrentException()
+        lblStatus.text = "Error snapping vertices: " + errorText
+        return false
+    )
+)
     
     -- Function to align each edge to specified axis
     fn alignEdgesToAxis axisNum =
+(
+    -- Get current modifier/object
+    local theMod = modPanel.getCurrentObject()
+    
+    -- Check if we have an Edit_Poly modifier and return immediately with error
+    if theMod != undefined and classOf theMod == Edit_Poly then
     (
-        -- Get the active poly object/modifier
-        local currentMod = getActivePoly()
-        
-        if currentMod == undefined then
-        (
-            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
-            return false
-        )
-        
-        -- Check if we're in edge subobject mode
-        if (subObjectLevel != 2) then
-        (
-            lblStatus.text = "Error: Not in Edge subobject mode"
-            return false
-        )
-        
-        -- Get selected edges
-        local selectedEdges = getPolyEdgeSelection currentMod
-        
-        if selectedEdges.numberset == 0 then
-        (
-            lblStatus.text = "Error: No edges selected"
-            return false
-        )
-        
-        -- Get space type (1=local, 2=world)
-        local useWorldSpace = (rdoGlobalSpace.state == 2)
-        
-        -- Use undo correctly for MAXScript
+        lblStatus.text = "Error: Edit Poly modifier is not supported. Please convert to Editable Poly."
+        return false
+    )
+    
+    -- Get the active poly object/modifier with error message
+    local polyResult = getActivePoly()
+    local currentMod = polyResult[1]
+    local errorMsg = polyResult[2]
+    
+    if currentMod == undefined then
+    (
+        lblStatus.text = errorMsg
+        return false
+    )
+    
+    -- Check if we're in edge subobject mode
+    if (subObjectLevel != 2) then
+    (
+        lblStatus.text = "Error: Not in Edge subobject mode"
+        return false
+    )
+    
+    -- Get selected edges (safely)
+    local selectedEdges = getPolyEdgeSelection currentMod
+    
+    -- Check if selectedEdges is valid and has selections
+    if selectedEdges == undefined or selectedEdges.count == 0 then
+    (
+        lblStatus.text = "Error: No edges selected"
+        return false
+    )
+    
+    -- Get space type (1=local, 2=world)
+    local useWorldSpace = (rdoGlobalSpace.state == 2)
+    
+    -- Use undo correctly for MAXScript
+    try
+    (
         undo on
         (
             alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace
@@ -888,39 +982,61 @@ fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
         lblStatus.text = "Aligned edges to " + axisName + " in " + spaceText + " space"
         return true
     )
+    catch
+    (
+        local errorText = getCurrentException()
+        lblStatus.text = "Error aligning edges: " + errorText
+        return false
+    )
+)
     
     -- Function to align each face to specified axis
     fn alignFacesToAxis axisNum =
+(
+    -- Get current modifier/object
+    local theMod = modPanel.getCurrentObject()
+    
+    -- Check if we have an Edit_Poly modifier and return immediately with error
+    if theMod != undefined and classOf theMod == Edit_Poly then
     (
-        -- Get the active poly object/modifier
-        local currentMod = getActivePoly()
-        
-        if currentMod == undefined then
-        (
-            lblStatus.text = "Error: No Editable Poly or Edit Poly modifier found"
-            return false
-        )
-        
-        -- Check if we're in face subobject mode
-        if (subObjectLevel != 4) then
-        (
-            lblStatus.text = "Error: Not in Face subobject mode"
-            return false
-        )
-        
-        -- Get selected faces
-        local selectedFaces = getPolyFaceSelection currentMod
-        
-        if selectedFaces.numberset == 0 then
-        (
-            lblStatus.text = "Error: No faces selected"
-            return false
-        )
-        
-        -- Get space type (1=local, 2=world)
-        local useWorldSpace = (rdoGlobalSpace.state == 2)
-        
-        -- Use undo correctly for MAXScript
+        lblStatus.text = "Error: Edit Poly modifier is not supported. Please convert to Editable Poly."
+        return false
+    )
+    
+    -- Get the active poly object/modifier with error message
+    local polyResult = getActivePoly()
+    local currentMod = polyResult[1]
+    local errorMsg = polyResult[2]
+    
+    if currentMod == undefined then
+    (
+        lblStatus.text = errorMsg
+        return false
+    )
+    
+    -- Check if we're in face subobject mode
+    if (subObjectLevel != 4) then
+    (
+        lblStatus.text = "Error: Not in Face subobject mode"
+        return false
+    )
+    
+    -- Get selected faces (safely)
+    local selectedFaces = getPolyFaceSelection currentMod
+    
+    -- Check if selectedFaces is valid and has selections
+    if selectedFaces == undefined or selectedFaces.count == 0 then
+    (
+        lblStatus.text = "Error: No faces selected"
+        return false
+    )
+    
+    -- Get space type (1=local, 2=world)
+    local useWorldSpace = (rdoGlobalSpace.state == 2)
+    
+    -- Use undo correctly for MAXScript
+    try
+    (
         undo on
         (
             alignFacesToAxisFn currentMod selectedFaces axisNum useWorldSpace
@@ -938,6 +1054,13 @@ fn alignEdgesToAxisFn currentMod selectedEdges axisNum useWorldSpace =
         lblStatus.text = "Aligned faces to " + axisName + " in " + spaceText + " space"
         return true
     )
+    catch
+    (
+        local errorText = getCurrentException()
+        lblStatus.text = "Error aligning faces: " + errorText
+        return false
+    )
+)
     
     -- Button click handlers for vertex alignment
     on btnVertexAlignX pressed do
