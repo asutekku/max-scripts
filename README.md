@@ -8,6 +8,7 @@ A collection of productivity and workflow enhancement scripts for Autodesk 3ds M
 
 - [Align Tools](#align-tools) - Precision alignment utility for vertices, edges, and faces
 - [Collapse Dead Structs](#collapse-dead-structs) - Utility for cleaning up mesh topology by collapsing dead structures
+- [Bulk Exporter](#bulk-exporter) - Export multiple objects with advanced naming and folder structure options
 
 ## Installation
 
@@ -105,11 +106,37 @@ A utility for cleaning up mesh topology by removing dead or invalid structures i
 
 **General Maintenance**: Regular use helps maintain clean topology in complex models during the modeling process.
 
+### Bulk Exporter
+
+![Bulk Export Screenshot](images/bulk_export.png)
+
+An advanced exporter tool for exporting selected objects with dynamic naming, folder creation, and format control.
+
+#### Features
+
+- **Preset System** - Save and reuse export settings
+- **Token-Based Naming** - Dynamic file naming using tokens like `%name`, `%layer`, `%YYYY`
+- **Multi-Format Support** - Export to FBX, OBJ, STL, glTF, USD, and more
+- **Layer-Based Folders** - Auto-creates folder structure based on object layer hierarchy
+- **Own Folder Option** - Export each object into its own folder
+- **Format Subfolder Option** - Add format-specific subfolders
+- **Prompt Control** - Enable or disable export options dialog
+- **Validation** - Ensures valid names before export
+- **Live Preview** - Shows how final export names will look in real-time
+
+#### Usage
+
+1. Select the objects to export
+2. Set your desired options in the Bulk Exporter dialog
+3. Optionally save your setup as a preset
+4. Click "Export Selection" to batch export all selected objects
+
 ## Compatibility
 
 - Tested with 3ds Max 2024 & 2025
 - Align Tools: Compatible with Editable Poly objects. Does not work with edit poly modifier.
 - Collapse Dead Structs: Works with any Editable Poly object.
+- Bulk Exporter: Works with any exportable object, supports most common formats.
 
 ## Contributing
 
@@ -118,3 +145,4 @@ Contributions, bug reports, and feature requests are welcome! Feel free to submi
 ## License
 
 Feel free to use this as you see.
+
