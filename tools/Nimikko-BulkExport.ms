@@ -445,29 +445,54 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		)
 		CollisionType.selection = foundIndex
 		NameTemplate.text = getINISetting The_INI_Path sectionName "Name_Template"
-		MoveToCenter.checked = execute( getINISetting The_INI_Path sectionName "MoveToCenter" )
-		ResetRotation.checked = execute( getINISetting The_INI_Path sectionName "ResetRotation" )
-		ResetX.checked = execute( getINISetting The_INI_Path sectionName "ResetX" )
-		ConvertToEditableMesh.checked = execute( getINISetting The_INI_Path sectionName "ConvertToEditableMesh" )
-		AddCollision.checked = execute( getINISetting The_INI_Path sectionName "AddCollision" )
-		MergeAllNodes.checked = execute( getINISetting The_INI_Path sectionName "MergeAllNodes" )
-		ShowPrompt.checked = execute( getINISetting The_INI_Path sectionName "Show_Prompt" )
-		ExportToMaxfileLocation.checked = execute( getINISetting The_INI_Path sectionName "ExportToMaxfileLocation" )
-		ExportByLayer.checked = execute( getINISetting The_INI_Path sectionName "ExportByLayer" )
-		MaxLayerDepth.value = execute( getINISetting The_INI_Path sectionName "MaxLayerDepth" )
-		ReverseLayerDepth.checked = execute( getINISetting The_INI_Path sectionName "ReverseLayerDepth" )
-		AddFormatFolder.checked = execute( getINISetting The_INI_Path sectionName "AddFormatFolder" )
-		ExportToOwnFolder.checked = execute( getINISetting The_INI_Path sectionName "ExportToOwnFolder" )
+		-- Fix for boolean values - safely parse them with error handling
+		fn safeParseBoolean iniValue defaultValue = 
+		(			
+			if iniValue == "" then
+				return defaultValue
+			try
+			(				
+				local result = execute( iniValue )
+				if classOf result == BooleanClass then
+					result
+				else
+					defaultValue
+			)
+			catch
+			(				
+				defaultValue
+			)
+		)
+		-- Apply boolean values safely
+		MoveToCenter.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "MoveToCenter" ) false
+		ResetRotation.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ResetRotation" ) false
+		ResetX.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ResetX" ) false
+		ConvertToEditableMesh.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ConvertToEditableMesh" ) false
+		AddCollision.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "AddCollision" ) false
+		MergeAllNodes.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "MergeAllNodes" ) false
+		ShowPrompt.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "Show_Prompt" ) false
+		ExportToMaxfileLocation.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportToMaxfileLocation" ) false
+		ExportByLayer.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportByLayer" ) false
+		ReverseLayerDepth.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ReverseLayerDepth" ) false
+		AddFormatFolder.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "AddFormatFolder" ) false
+		ExportToOwnFolder.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportToOwnFolder" ) false
+		-- Handle the spinner (numeric) value
+		try
+		(			
+			MaxLayerDepth.value = execute( getINISetting The_INI_Path sectionName "MaxLayerDepth" )
+		)
+		catch
+		(			
+			MaxLayerDepth.value = 1
+		)
 		-- Update UI based on loaded settings
 		if ExportFormat.selection == 14 then
 		(			
 			AddCollision.enabled = false
-			--UCXMeshName.enabled = false
 		)
 		else
 		(			
 			AddCollision.enabled = true
-			--UCXMeshName.enabled = true
 		)
 		if MergeAllNodes.checked == False then
 		(			
@@ -1513,8 +1538,7 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 						setINISetting The_INI_Path "Presets" "LastUsedPreset" ""
 					)
 				)
-			)
-		)
+			)		)
 		else
 		(			
 			messageBox "No preset selected to delete."
