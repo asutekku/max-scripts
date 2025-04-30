@@ -90,7 +90,7 @@ presetKeys = #(
 	#( "AddFormatFolder", AddFormatFolder ),
 	#( "ExportToOwnFolder", ExportToOwnFolder )
 )
-try( destroyDialog TKT ) catch()
+try( destroyDialog BulkExportDialog ) catch()
 try( destroyDialog AboutRollout ) catch()
 rollout AboutRollout "About Bulk Exporter v3.0" width: 440 height: 510
 
@@ -192,7 +192,7 @@ fn showPresetNameDialogAndGetName =
 	PresetNameDialog.getResult()
 )
 -- MAIN ROLLOUT --
-rollout TKT "Bulk Exporter" width: 520 height: 470
+rollout BulkExportDialog "Bulk Exporter" width: 520 height: 470
 
 (	
 	local theClasses = exporterPlugin.classes
@@ -331,7 +331,7 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		else
 		(			
 			-- First-time initialization
-			DialogPositionExportTool = getDialogPos TKT
+			DialogPositionExportTool = getDialogPos BulkExportDialog
 			saveSetting "Dialog_Position" "DialogPositionExportTool" DialogPositionExportTool
 			temp01 = getDir #export
 			insertItem temp01 ExportPaths.items 1
@@ -425,98 +425,95 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		return true
 	)
 	fn LoadPreset presetName = 
-	(		
-		if presetName == "" then
-			return false
-		-- Create the section name for this preset
-		local sectionName = "Preset_" + presetName
-		-- Check if the preset exists
-		if( getINISetting The_INI_Path sectionName "Format" )== "" then
-			return false
-		-- Load all settings from the preset
-		ExportFormat.selection = execute( getINISetting The_INI_Path sectionName "Format" )
-		local savedCollisionPrefix = getINISetting The_INI_Path sectionName "Collision_Prefix"
-		local foundIndex = findItem CollisionType.items savedCollisionPrefix
-		if foundIndex == 0 then
-		(			
-			-- Handle custom prefix
-			append CollisionType.items savedCollisionPrefix
-			foundIndex = findItem CollisionType.items savedCollisionPrefix
-		)
-		CollisionType.selection = foundIndex
-		NameTemplate.text = getINISetting The_INI_Path sectionName "Name_Template"
-		-- Fix for boolean values - safely parse them with error handling
-		fn safeParseBoolean iniValue defaultValue = 
-		(			
-			if iniValue == "" then
-				return defaultValue
-			try
-			(				
-				local result = execute( iniValue )
-				if classOf result == BooleanClass then
-					result
-				else
-					defaultValue
-			)
-			catch
-			(				
-				defaultValue
-			)
-		)
-		-- Apply boolean values safely
-		MoveToCenter.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "MoveToCenter" ) false
-		ResetRotation.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ResetRotation" ) false
-		ResetX.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ResetX" ) false
-		ConvertToEditableMesh.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ConvertToEditableMesh" ) false
-		AddCollision.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "AddCollision" ) false
-		MergeAllNodes.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "MergeAllNodes" ) false
-		ShowPrompt.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "Show_Prompt" ) false
-		ExportToMaxfileLocation.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportToMaxfileLocation" ) false
-		ExportByLayer.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportByLayer" ) false
-		ReverseLayerDepth.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ReverseLayerDepth" ) false
-		AddFormatFolder.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "AddFormatFolder" ) false
-		ExportToOwnFolder.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportToOwnFolder" ) false
-		-- Handle the spinner (numeric) value
-		try
-		(			
-			MaxLayerDepth.value = execute( getINISetting The_INI_Path sectionName "MaxLayerDepth" )
-		)
-		catch
-		(			
-			MaxLayerDepth.value = 1
-		)
-		-- Update UI based on loaded settings
-		if ExportFormat.selection == 14 then
-		(			
-			AddCollision.enabled = false
-		)
-		else
-		(			
-			AddCollision.enabled = true
-		)
-		if MergeAllNodes.checked == False then
-		(			
-			ResetX.enabled = False
-			ConvertToEditableMesh.enabled = False
-		)
-		else
-			if MergeAllNodes.checked == True then
-		(			
-			ResetX.enabled = True
-			ConvertToEditableMesh.enabled = True
-		)
-		if ExportToMaxfileLocation.checked then
-		(			
-			ExportPaths.enabled = false
-			Browse.enabled = false
-		)
-		else
-		(			
-			ExportPaths.enabled = true
-			Browse.enabled = true
-		)
-		return true
-	)
+(    
+    if presetName == "" then
+        return false
+    -- Create the section name for this preset
+    local sectionName = "Preset_" + presetName
+    -- Check if the preset exists
+    if( getINISetting The_INI_Path sectionName "Format" )== "" then
+        return false
+        
+    -- Load all settings from the preset
+    ExportFormat.selection = execute( getINISetting The_INI_Path sectionName "Format" )
+    local savedCollisionPrefix = getINISetting The_INI_Path sectionName "Collision_Prefix"
+    local foundIndex = findItem CollisionType.items savedCollisionPrefix
+    if foundIndex == 0 then
+    (        
+        -- Handle custom prefix
+        append CollisionType.items savedCollisionPrefix
+        foundIndex = findItem CollisionType.items savedCollisionPrefix
+    )
+    CollisionType.selection = foundIndex
+    NameTemplate.text = getINISetting The_INI_Path sectionName "Name_Template"
+    
+    -- Fix for boolean values - safely parse them with error handling
+    fn safeParseBoolean iniValue defaultValue = 
+    (
+        if iniValue == "" then return defaultValue
+        try (
+            local result = execute(iniValue)
+            if classOf result == BooleanClass then result else defaultValue
+        ) catch (
+            defaultValue
+        )
+    )
+    
+    -- Apply boolean values safely
+    MoveToCenter.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "MoveToCenter") false
+    ResetRotation.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ResetRotation") false
+    ResetX.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ResetX") false
+    ConvertToEditableMesh.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ConvertToEditableMesh") false
+    AddCollision.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "AddCollision") false
+    MergeAllNodes.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "MergeAllNodes") false
+    ShowPrompt.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "Show_Prompt") false
+    ExportToMaxfileLocation.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ExportToMaxfileLocation") false
+    ExportByLayer.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ExportByLayer") false
+    ReverseLayerDepth.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ReverseLayerDepth") false
+    AddFormatFolder.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "AddFormatFolder") false
+    ExportToOwnFolder.checked = safeParseBoolean (getINISetting The_INI_Path sectionName "ExportToOwnFolder") false
+    
+    -- Handle the spinner (numeric) value
+    try (
+        MaxLayerDepth.value = execute( getINISetting The_INI_Path sectionName "MaxLayerDepth" )
+    ) catch (
+        MaxLayerDepth.value = 1
+    )
+    
+    -- Update UI based on loaded settings
+    if ExportFormat.selection == 14 then
+    (        
+        AddCollision.enabled = false
+    )
+    else
+    (        
+        AddCollision.enabled = true
+    )
+    
+    if MergeAllNodes.checked == False then
+    (        
+        ResetX.enabled = False
+        ConvertToEditableMesh.enabled = False
+    )
+    else if MergeAllNodes.checked == True then
+    (        
+        ResetX.enabled = True
+        ConvertToEditableMesh.enabled = True
+    )
+    
+    if ExportToMaxfileLocation.checked then
+    (        
+        ExportPaths.enabled = false
+        Browse.enabled = false
+    )
+    else
+    (        
+        ExportPaths.enabled = true
+        Browse.enabled = true
+    )
+    
+    return true
+)
 	fn DeletePreset presetName = 
 	(		
 		if presetName == "" then
@@ -553,20 +550,33 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		if Counter == theClasses.count then
 			return 0
 	)
-	fn GetExporterClass = 
-	(		
-		if ExportFormat.selection != undefined and ExportFormat.selection > 0 and ExportFormat.selection <= formatInfo.count then
-		(			
-			local exporterCode = formatInfo[ExportFormat.selection][2]
-			-- Special handling for VRSCENE and MAX (negative codes)
-			if exporterCode == -1 or exporterCode == -2 then
-				return exporterCode
-			-- Otherwise find exporter class from string
-			return FindExporterClass exporterCode
-		)
-		else
-			return undefined
-	)
+	fn GetExporterClass =
+(
+    if ExportFormat.selection != undefined and ExportFormat.selection > 0 and ExportFormat.selection <= formatInfo.count then
+    (
+        local exporterCode = formatInfo[ExportFormat.selection][2]
+        -- Special handling for VRSCENE and MAX (negative codes)
+        if exporterCode == -1 or exporterCode == -2 then
+            return exporterCode
+            
+        -- Otherwise find exporter class from string
+        local result = FindExporterClass exporterCode
+        
+        -- Check if result is valid
+        if result == 0 or result == undefined then
+        (
+            messageBox ("Exporter plugin '" + exporterCode + "' not found!")
+            return undefined
+        )
+        
+        return result
+    )
+    else
+    (
+        messageBox "Invalid export format selection!"
+        return undefined
+    )
+)
 	fn GetRoot obj = -- Get the root of obj
 	(		
 		while
@@ -887,6 +897,11 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 	)
 	fn Export_Stuff obj ExporterClass = 
 	(		
+		if ExporterClass == undefined or (classOf ExporterClass == Integer and (ExporterClass <= 0 or ExporterClass > theClasses.count)) then
+    (
+        messageBox "Invalid exporter class in Export_Stuff. Export aborted."
+        return false
+    )
 		-- Determine base export path
 		if ExportToMaxfileLocation.checked then
 			TheExportPath = maxFilePath as string
@@ -944,16 +959,42 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		)
 		-- Export logic
 		if ExporterClass == -2 and ExportFormat.selection != 2 then
-		(			
-			saveNodes $ TheObjName
-		)
-		else
-		(			
-			if ExportCounter == 0 and ShowPrompt.checked then
-				exportFile TheObjName selectedOnly: true using: theClasses[ExporterClass]
-			else
-				exportFile TheObjName #noPrompt selectedOnly: true using: theClasses[ExporterClass]
-		)
+    (           
+        saveNodes $ TheObjName
+    )
+    else
+    (           
+        -- Handle regular exporters
+        if ExporterClass > 0 and ExporterClass <= theClasses.count then
+        (
+            if ExportCounter == 0 and ShowPrompt.checked then
+                exportFile TheObjName selectedOnly: true using: theClasses[ExporterClass]
+            else
+                exportFile TheObjName #noPrompt selectedOnly: true using: theClasses[ExporterClass]
+        )
+        else
+        (
+            -- Use format info directly if ExporterClass is invalid
+            local formatInfo_entry = formatInfo[ExportFormat.selection]
+            if formatInfo_entry != undefined and formatInfo_entry.count >= 2 then
+            (
+                local exporterName = formatInfo_entry[2]
+                if classOf exporterName == String then
+                (
+                    local exporter = execute("exporterPlugin.classes." + exporterName)
+                    if exporter != undefined then
+                    (
+                        if ExportCounter == 0 and ShowPrompt.checked then
+                            exportFile TheObjName selectedOnly: true using: exporter
+                        else
+                            exportFile TheObjName #noPrompt selectedOnly: true using: exporter
+                    )
+                    else
+                        messageBox ("Exporter '" + exporterName + "' not found!")
+                )
+            )
+        )
+    )
 		-- Post-export collision cleanup
 		if AddCollision.checked then
 		(			
@@ -1123,40 +1164,51 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		max modify mode
 	)
 	fn ExportSelectedObjects objs = 
-	(		
-		for obj in objs do
-		(			
-			if classOf obj == Dummy or classOf obj == Point then
-			(				
-				obj = MergeChildren obj CollisionMeshes
-				LinkedToDummy = True
-			)
-			else
-				LinkedToDummy = False
-			-- Apply transforms
-			if MoveToCenter.Checked do
-				obj.pos = [0, 0, 0]
-			if ResetRotation.Checked do
-				obj.rotation = quat 0 0 0 1
-			if ResetX.checked and( MergeAllNodes.checked or not LinkedToDummy ) do
-			(				
-				resetxform obj
-				collapseStack obj
-			)
-			if ConvertToEditableMesh.Checked and( MergeAllNodes.checked or not LinkedToDummy ) do
-				convertToMesh obj
-			-- Validate and export
-			local finalName = ApplyNamingTemplate NameTemplate.text obj
-			if not ValidateName finalName then
-			(				
-				messageBox( "Invalid characters in name: " + finalName )
-				return false
-			)
-			Export_Stuff obj ExporterClass
-			ExportCounter += 1
-		)
-		return true
-	)
+(   
+    local localExporterClass = GetExporterClass() -- Get a fresh copy locally
+    if localExporterClass == undefined then
+        return false
+        
+    for obj in objs do
+    (       
+        if classOf obj == Dummy or classOf obj == Point then
+        (           
+            obj = MergeChildren obj CollisionMeshes
+            LinkedToDummy = True
+        )
+        else
+            LinkedToDummy = False
+            
+        -- Apply transforms
+        if MoveToCenter.Checked do
+            obj.pos = [0, 0, 0]
+            
+        if ResetRotation.Checked do
+            obj.rotation = quat 0 0 0 1
+            
+        if ResetX.checked and (MergeAllNodes.checked or not LinkedToDummy) do
+        (           
+            resetxform obj
+            collapseStack obj
+        )
+        
+        if ConvertToEditableMesh.Checked and (MergeAllNodes.checked or not LinkedToDummy) do
+            convertToMesh obj
+            
+        -- Validate and export
+        local finalName = ApplyNamingTemplate NameTemplate.text obj
+        if not ValidateName finalName then
+        (           
+            messageBox( "Invalid characters in name: " + finalName )
+            return false
+        )
+        
+        -- Pass the local copy to Export_Stuff
+        Export_Stuff obj localExporterClass
+        ExportCounter += 1
+    )
+    return true
+)
 	fn RefreshPresetsDropdown = 
 	(		
 		if ExportPresets.count > 0 then
@@ -1167,12 +1219,12 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 	-- ***********************************************************************************************************************************
 	-- **************************************************  EVENTS  ***********************************************************************
 	-- ***********************************************************************************************************************************
-	on TKT open do
+	on BulkExportDialog open do
 	(		
 		windows.sendmessage ExportPaths.hwnd[1] 352 450 0
 		GetINISettings()
 		if DialogPositionExportTool != undefined do
-			SetDialogPos TKT DialogPositionExportTool
+			SetDialogPos BulkExportDialog DialogPositionExportTool
 		-- Ensure dropdown is valid
 		RefreshPresetsDropdown()
 		-- Try to auto-load last used preset
@@ -1227,9 +1279,9 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 			f[1]
 		UpdateNamePreview()
 	)
-	on TKT close do
+	on BulkExportDialog close do
 	(		
-		setINISetting The_INI_Path "Dialog_Position" "DialogPositionExportTool"( GetDialogPos TKT as string )
+		setINISetting The_INI_Path "Dialog_Position" "DialogPositionExportTool"( GetDialogPos BulkExportDialog as string )
 	)
 	-- Checkbox handlers
 	on MoveToCenter changed val do
@@ -1538,7 +1590,8 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 						setINISetting The_INI_Path "Presets" "LastUsedPreset" ""
 					)
 				)
-			)		)
+			)
+		)
 		else
 		(			
 			messageBox "No preset selected to delete."
@@ -1549,7 +1602,7 @@ rollout TKT "Bulk Exporter" width: 520 height: 470
 		ShowHelpRollout()
 )
 callbacks.removeScripts id: #NamePreviewCallback
-callbacks.addScript #SelectionSetChanged "try(TKT.UpdateNamePreview())catch()" id: #NamePreviewCallback
+callbacks.addScript #SelectionSetChanged "try(BulkExportDialog.UpdateNamePreview())catch()" id: #NamePreviewCallback
 macroScript BulkExporter
 category: "Nimikko"
 tooltip: "Bulk Exporter 3.0"
@@ -1559,6 +1612,6 @@ icon: #( "Containers", 8 )
 (	
 	on execute do
 	(		
-		CreateDialog TKT style: #( #style_titlebar, #style_sysmenu, #style_toolwindow )
+		CreateDialog BulkExportDialog style: #( #style_titlebar, #style_sysmenu, #style_toolwindow )
 	)
 )
