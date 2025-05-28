@@ -7,6 +7,17 @@ icon: #( "Containers", 8 )
 
 (	
 	local The_INI_Path = ( ( getDir #userScripts )+ "/NIMIKKO/Export_Settings_3_0.ini" )
+	local iniDir = ( getDir #userScripts )+ "/NIMIKKO/"
+	if not doesFileExist iniDir then
+	(		
+		local result = makeDir iniDir all: true
+		if result != true then
+		(			
+			messageBox( "Failed to create directory: " + iniDir )
+			-- Fallback to user scripts directory
+			The_INI_Path = ( getDir #userScripts )+ "/Export_Settings_3_0.ini"
+		)
+	)
 	formatInfo = #(		
 		#( "FBX", "FBXEXP", ".FBX" ),
 		#( "OBJ", "ObjExp", ".OBJ" ),
@@ -42,10 +53,31 @@ icon: #( "Containers", 8 )
 	(		
 		if The_INI_Path != undefined then
 		(			
-			try( execute( getINISetting The_INI_Path section key ) ) catch( fallback )
+			local iniValue = getINISetting The_INI_Path section key
+			if iniValue != "" then
+			(				
+				try
+				(					
+					local result = execute iniValue
+					-- Validate the result type matches expectation
+					if fallback != undefined and classOf result != classOf fallback then
+						return fallback
+					return result
+				)
+				catch
+				(					
+					return fallback
+				)
+			)
+			else
+			(				
+				return fallback
+			)
 		)
 		else
-			fallback
+		(			
+			return fallback
+		)
 	)
 	fn applyCheckbox checkboxCtrl section key default: false = 
 	(		
@@ -237,16 +269,17 @@ icon: #( "Containers", 8 )
 		checkbox ConvertToEditableMesh "Convert to editable mesh" pos:[30, 124]
 		checkbox MergeAllNodes "Merge All Nodes" pos:[30, 142]
 		-- Export Name Template
-		groupBox grpNamingTemplate "Export Name Template" pos:[20, 180] width: 230 height: 65
+		groupBox grpNamingTemplate "Export Name Template" pos:[20, 180] width: 230 height: 85
 		label lblTemplate "Name:" pos:[30, 200]
 		edittext NameTemplate "" pos:[75, 198] width: 120 tooltip: "Use tokens like %name, %layer, %YYMMDD"
 		button ShowTokens "?" pos:[200, 196] width: 20 height: 20 tooltip: "Show available tokens"
-		label ExportNamePreview "Preview: ---" pos:[30, 218] width: 200
+		label ExportNamePreview "Preview: ---" pos:[30, 220] width: 200
+		label ExportFolderPreview "Folder: ---" pos:[30, 240] width: 200
 		-- Collision
-		groupBox grpCollision "Collision" pos:[20, 250] width: 230 height: 50
-		checkbox AddCollision "Add collision" pos:[30, 270] tooltip: "Merge mesh with matching prefix (e.g. UCX_)"
-		label lblColType "Type:" pos:[130, 272] width: 30
-		dropdownlist CollisionType items: #( "UCX_", "UBX_", "USP_", "MCDCX_", "Custom..." ) pos:[165, 268] width: 55
+		groupBox grpCollision "Collision" pos:[20, 270] width: 230 height: 50
+		checkbox AddCollision "Add collision" pos:[30, 290] tooltip: "Merge mesh with matching prefix (e.g. UCX_)"
+		label lblColType "Type:" pos:[130, 292] width: 30
+		dropdownlist CollisionType items: #( "UCX_", "UBX_", "USP_", "MCDCX_", "Custom..." ) pos:[165, 288] width: 55
 		-- RIGHT COLUMN ------------------------------------------
 		groupBox grpRight "Export Settings" pos:[270, 35] width: 240 height: 275
 		-- Format
@@ -276,95 +309,6 @@ icon: #( "Containers", 8 )
 		-- ***********************************************************************************************************************************
 		-- **************************************************  FUNCTIONS  ********************************************************************
 		-- ***********************************************************************************************************************************
-		fn GetINISettings = 
-		(			
-			if( getFiles The_INI_Path ).count != 0 then
-			(				
-				try( DialogPositionExportTool = loadSetting "Dialog_Position" "DialogPositionExportTool" ) catch()
-				-- Load export paths
-				ExportPaths.items = loadSetting "Paths" "Export_Paths" fallback: #()
-				if ExportPaths.items.count == 0 do
-				(					
-					temp01 = getDir #export
-					insertItem temp01 ExportPaths.items 1
-					ExportPaths.items = makeUniqueArray ExportPaths.items
-					saveSetting "Paths" "Export_Paths" ExportPaths.items
-				)
-				-- Load presets
-				ExportPresets = loadSetting "Presets" "Preset_Names" fallback: #()
-				currentLoadedPreset = getINISetting The_INI_Path "Presets" "LastUsedPreset"
-				if currentLoadedPreset != undefined and currentLoadedPreset != "" do
-				(					
-					if findItem ExportPresets currentLoadedPreset > 0 then
-					(						
-						LoadPreset currentLoadedPreset
-						lastLoadedSettings = collectCurrentSettings()
-					)
-				)
-				PresetsList.items = ExportPresets
-				-- Format selection
-				local fmtSel = loadSetting "Format" "Selected_Format" fallback: 1
-				ExportFormat.selection = fmtSel
-				-- Collision type (handle custom types)
-				local savedColPrefix = getINISetting The_INI_Path "Texts" "Collision_Prefix"
-				local foundIndex = findItem CollisionType.items savedColPrefix
-				if foundIndex == 0 and savedColPrefix != "" do
-				(					
-					append CollisionType.items savedColPrefix
-					foundIndex = findItem CollisionType.items savedColPrefix
-				)
-				CollisionType.selection = if foundIndex > 0 then
-					foundIndex
-				else
-					1
-				-- Name template
-				local savedTemplate = getINISetting The_INI_Path "Texts" "Name_Template"
-				NameTemplate.text = if savedTemplate != "" then
-					savedTemplate
-				else
-					"%name"
-				-- Apply checkboxes and spinner using helpers
-				applyCheckbox MoveToCenter "Checkboxes" "MoveToCenter"
-				applyCheckbox ResetRotation "Checkboxes" "ResetRotation"
-				applyCheckbox ResetX "Checkboxes" "ResetX"
-				applyCheckbox ConvertToEditableMesh "Checkboxes" "ConvertToEditableMesh"
-				applyCheckbox AddCollision "Checkboxes" "AddCollision"
-				applyCheckbox MergeAllNodes "Checkboxes" "MergeAllNodes"
-				applyCheckbox ShowPrompt "Checkboxes" "Show_Prompt"
-				applyCheckbox ExportToMaxfileLocation "Checkboxes" "ExportToMaxfileLocation"
-				applyCheckbox AddFormatFolder "Checkboxes" "AddFormatFolder"
-				applyCheckbox ExportByLayer "Checkboxes" "ExportByLayer"
-				applyCheckbox ReverseLayerDepth "Checkboxes" "ReverseLayerDepth"
-				-- Max layer depth (spinner)
-				try
-				(					
-					local d = getINISetting The_INI_Path "Values" "MaxLayerDepth"
-					MaxLayerDepth.value = if d != "" then
-						execute d
-					else
-						1
-				)
-				catch( MaxLayerDepth.value = 1 )
-			)
-			else
-			(				
-				-- First-time initialization
-				DialogPositionExportTool = getDialogPos BulkExportDialog
-				saveSetting "Dialog_Position" "DialogPositionExportTool" DialogPositionExportTool
-				temp01 = getDir #export
-				insertItem temp01 ExportPaths.items 1
-				ExportPaths.items = makeUniqueArray ExportPaths.items
-				saveSetting "Paths" "Export_Paths" ExportPaths.items
-				ExportPresets = #()
-				saveSetting "Presets" "Preset_Names" ExportPresets
-				saveSetting "Format" "Selected_Format" ExportFormat.selection
-				saveSetting "Texts" "Collision_Prefix" CollisionType.selected
-				saveSetting "Texts" "Name_Template" NameTemplate.text
-				-- Save all default checkbox and spinner states
-				SaveCurrentPreset "Checkboxes"
-				saveSetting "Values" "MaxLayerDepth" MaxLayerDepth.value
-			)
-		)
 		fn ShowTokenReference = 
 		(			
 			local msg = ""
@@ -555,6 +499,102 @@ icon: #( "Containers", 8 )
 					PresetsList.selection = 1
 			)
 			return true
+		)
+		fn GetINISettings = 
+		(			
+			if( getFiles The_INI_Path ).count != 0 then
+			(				
+				try( DialogPositionExportTool = loadSetting "Dialog_Position" "DialogPositionExportTool" ) catch()
+				-- Load export paths
+				local loadedPaths = loadSetting "Paths" "Export_Paths" fallback: #()
+				-- Ensure we have an array
+				if classOf loadedPaths != Array then
+					loadedPaths = #()
+				if loadedPaths.count == 0 then
+				(					
+					local defaultPath = getDir #export
+					loadedPaths = #( defaultPath )
+					saveSetting "Paths" "Export_Paths" loadedPaths
+				)
+				ExportPaths.items = loadedPaths
+				-- Load presets
+				ExportPresets = loadSetting "Presets" "Preset_Names" fallback: #()
+				currentLoadedPreset = getINISetting The_INI_Path "Presets" "LastUsedPreset"
+				if currentLoadedPreset != undefined and currentLoadedPreset != "" do
+				(					
+					if findItem ExportPresets currentLoadedPreset > 0 then
+					(						
+						LoadPreset currentLoadedPreset
+						lastLoadedSettings = collectCurrentSettings()
+					)
+				)
+				PresetsList.items = ExportPresets
+				-- Collision type (handle custom types)
+				local savedColPrefix = getINISetting The_INI_Path "Texts" "Collision_Prefix"
+				local foundIndex = findItem CollisionType.items savedColPrefix
+				if foundIndex == 0 and savedColPrefix != "" do
+				(					
+					append CollisionType.items savedColPrefix
+					foundIndex = findItem CollisionType.items savedColPrefix
+				)
+				CollisionType.selection = if foundIndex > 0 then
+					foundIndex
+				else
+					1
+				-- Name template
+				local savedTemplate = getINISetting The_INI_Path "Texts" "Name_Template"
+				NameTemplate.text = if savedTemplate != "" then
+					savedTemplate
+				else
+					"%name"
+				-- Apply checkboxes and spinner using helpers
+				applyCheckbox MoveToCenter "Checkboxes" "MoveToCenter"
+				applyCheckbox ResetRotation "Checkboxes" "ResetRotation"
+				applyCheckbox ResetX "Checkboxes" "ResetX"
+				applyCheckbox ConvertToEditableMesh "Checkboxes" "ConvertToEditableMesh"
+				applyCheckbox AddCollision "Checkboxes" "AddCollision"
+				applyCheckbox MergeAllNodes "Checkboxes" "MergeAllNodes"
+				applyCheckbox ShowPrompt "Checkboxes" "Show_Prompt"
+				applyCheckbox ExportToMaxfileLocation "Checkboxes" "ExportToMaxfileLocation"
+				applyCheckbox AddFormatFolder "Checkboxes" "AddFormatFolder"
+				applyCheckbox ExportByLayer "Checkboxes" "ExportByLayer"
+				applyCheckbox ReverseLayerDepth "Checkboxes" "ReverseLayerDepth"
+				-- Max layer depth (spinner)
+				try
+				(					
+					local d = getINISetting The_INI_Path "Values" "MaxLayerDepth"
+					MaxLayerDepth.value = if d != "" then
+						execute d
+					else
+						1
+				)
+				catch( MaxLayerDepth.value = 1 )
+			)
+			else
+			(				
+				-- First-time initialization
+				DialogPositionExportTool = getDialogPos BulkExportDialog
+				saveSetting "Dialog_Position" "DialogPositionExportTool" DialogPositionExportTool
+				temp01 = getDir #export
+				insertItem temp01 ExportPaths.items 1
+				ExportPaths.items = makeUniqueArray ExportPaths.items
+				saveSetting "Paths" "Export_Paths" ExportPaths.items
+				ExportPresets = #()
+				saveSetting "Presets" "Preset_Names" ExportPresets
+				/*local fbxIndex = findItem ExportFormat.items "FBX"
+				if fbxIndex > 0 then
+					ExportFormat.selection = fbxIndex
+				else
+					if ExportFormat.items.count > 0 then
+					ExportFormat.selection = 1
+				saveSetting "Format" "Selected_Format" ExportFormat.selection*/
+				saveSetting "Texts" "Collision_Prefix" CollisionType.selected
+				NameTemplate.text = "%name"
+				saveSetting "Texts" "Name_Template" "%name"
+				-- Save all default checkbox and spinner states
+				SaveCurrentPreset "Checkboxes"
+				saveSetting "Values" "MaxLayerDepth" MaxLayerDepth.value
+			)
 		)
 		-- END PRESET FUNCTIONS
 		fn FindExporterClass TheClass = 
@@ -902,6 +942,54 @@ icon: #( "Containers", 8 )
 			name = substituteString name "%ss"( formattedPrint timeArray[7] format: "02d" )
 			return name
 		)
+		fn UpdateFolderPreview = 
+		(			
+			if selection.count > 0 then
+			(				
+				local obj = selection[1]
+				local subfolders = #() -- Array to collect subfolder names
+				-- Add format folder if enabled
+				if AddFormatFolder.checked and ExportFormat.selection > 0 and ExportFormat.selection <= ExportFormat.items.count then
+				(					
+					local formatFolder = ExportFormat.items[ExportFormat.selection]
+					if formatFolder != undefined and formatFolder != "" then
+						append subfolders formatFolder
+				)
+				-- Add layer-based folder if enabled
+				if ExportByLayer.checked then
+				(					
+					local layerPath = GetLayerPath obj MaxLayerDepth.value ReverseLayerDepth.checked
+					if layerPath != "" then
+						append subfolders layerPath
+				)
+				-- Add object's own folder if enabled
+				if ExportToOwnFolder.checked then
+				(					
+					local baseName = ApplyNamingTemplate NameTemplate.text obj
+					append subfolders baseName
+				)
+				-- Build the subfolder path
+				if subfolders.count > 0 then
+				(					
+					local folderPath = ""
+					for i = 1 to subfolders.count do
+					(						
+						folderPath += subfolders[i]
+						if i < subfolders.count then
+							folderPath += "\\"
+					)
+					ExportFolderPreview.text = "Subfolders: " + folderPath
+				)
+				else
+				(					
+					ExportFolderPreview.text = "Subfolders: (none)"
+				)
+			)
+			else
+			(				
+				ExportFolderPreview.text = "Subfolders: ---"
+			)
+		)
 		fn UpdateNamePreview = 
 		(			
 			if selection.count > 0 then
@@ -913,6 +1001,7 @@ icon: #( "Containers", 8 )
 			(				
 				ExportNamePreview.text = "Preview: ---"
 			)
+			UpdateFolderPreview()
 		)
 		fn Export_Stuff obj ExporterClass = 
 		(			
@@ -1234,6 +1323,8 @@ icon: #( "Containers", 8 )
 		on BulkExportDialog open do
 		(			
 			windows.sendmessage ExportPaths.hwnd[1] 352 450 0
+			if NameTemplate.text == "" then
+				NameTemplate.text = "%name"
 			GetINISettings()
 			if DialogPositionExportTool != undefined do
 				SetDialogPos BulkExportDialog DialogPositionExportTool
@@ -1289,6 +1380,24 @@ icon: #( "Containers", 8 )
 			)
 			collect
 				f[1]
+			-- Set format selection AFTER populating dropdown
+			local fmtSel = loadSetting "Format" "Selected_Format" fallback: undefined
+			if fmtSel == undefined then
+			(				
+				-- Look for FBX in the populated dropdown
+				local fbxIndex = findItem ExportFormat.items "FBX"
+				if fbxIndex > 0 then
+					fmtSel = fbxIndex
+				else
+					if ExportFormat.items.count > 0 then
+					fmtSel = 1 -- First available format if FBX not found
+				else
+					fmtSel = 1 -- Fallback
+			)
+			-- Ensure the selection is within valid range
+			if fmtSel > ExportFormat.items.count then
+				fmtSel = 1
+			ExportFormat.selection = fmtSel
 			UpdateNamePreview()
 		)
 		on BulkExportDialog close do
@@ -1317,17 +1426,33 @@ icon: #( "Containers", 8 )
 			saveSetting "Checkboxes" "ExportToMaxfileLocation" val
 			ExportPaths.enabled = not val
 			Browse.enabled = not val
+			UpdateFolderPreview()
 		)
 		on ExportByLayer changed val do
+		(			
 			saveSetting "Checkboxes" "ExportByLayer" val
-		on ReverseLayerDepth changed val do
-			saveSetting "Checkboxes" "ReverseLayerDepth" val
+			UpdateFolderPreview()
+		)
 		on AddFormatFolder changed val do
+		(			
 			saveSetting "Checkboxes" "AddFormatFolder" val
-		on ShowPrompt changed val do
-			saveSetting "Checkboxes" "Show_Prompt" val
+			UpdateFolderPreview()
+		)
+		on ExportToOwnFolder changed val do
+		(			
+			saveSetting "Checkboxes" "ExportToOwnFolder" val
+			UpdateFolderPreview()
+		)
 		on MaxLayerDepth changed val do
+		(			
 			saveSetting "Values" "MaxLayerDepth" val
+			UpdateFolderPreview()
+		)
+		on ReverseLayerDepth changed val do
+		(			
+			saveSetting "Checkboxes" "ReverseLayerDepth" val
+			UpdateFolderPreview()
+		)
 		-- Text handlers
 		on NameTemplate changed val do
 		(			
@@ -1337,18 +1462,11 @@ icon: #( "Containers", 8 )
 		-- Dropdown handlers
 		on ExportFormat selected idx do
 		(			
-			try
-			(				
-				saveSetting "Format" "Selected_Format" idx
-				local isSupported = idx != 14
-				AddCollision.enabled = isSupported
-				CollisionType.enabled = isSupported
-			)
-			catch( e )
-			
-			(				
-				messageBox( "Error in format selection: " + e.message )
-			)
+			saveSetting "Format" "Selected_Format" idx
+			local isSupported = idx != 14
+			AddCollision.enabled = isSupported
+			CollisionType.enabled = isSupported
+			UpdateFolderPreview()
 		)
 		on ExportPaths selected idx do
 		(			
@@ -1356,6 +1474,7 @@ icon: #( "Containers", 8 )
 			ExportPaths.items = makeUniqueArray ExportPaths.items
 			ExportPaths.selection = 1
 			saveSetting "Paths" "Export_Paths" ExportPaths.items
+			UpdateFolderPreview()
 		)
 		on ExportPaths rightClick do
 		(			
@@ -1420,14 +1539,6 @@ icon: #( "Containers", 8 )
 				Browse.enabled = true
 			)
 		)
-		-- NEW EVENT HANDLERS
-		on ExportByLayer changed ExportByLayer_State do
-			setINISetting( The_INI_Path ) "Checkboxes" "ExportByLayer"( ExportByLayer_State as string )
-		on MaxLayerDepth changed MaxLayerDepth_Value do
-			setINISetting( The_INI_Path ) "Values" "MaxLayerDepth"( MaxLayerDepth_Value as string )
-		on ReverseLayerDepth changed ReverseLayerDepth_State do
-			setINISetting( The_INI_Path ) "Checkboxes" "ReverseLayerDepth"( ReverseLayerDepth_State as string )
-		-- END NEW EVENT HANDLERS
 		on OpenMaxfileLocation pressed do
 		(			
 			if maxFilePath != undefined and maxFilePath != "" then
@@ -1623,7 +1734,7 @@ icon: #( "Containers", 8 )
 			ShowHelpRollout()
 	)
 	callbacks.removeScripts id: #NamePreviewCallback
-	callbacks.addScript #SelectionSetChanged "try(BulkExportDialog.UpdateNamePreview())catch()" id: #NamePreviewCallback
+	callbacks.addScript #SelectionSetChanged "try(BulkExportDialog.UpdateNamePreview(); BulkExportDialog.UpdateFolderPreview())catch()" id: #NamePreviewCallback
 	on execute do
 	(		
 		CreateDialog BulkExportDialog style: #( #style_titlebar, #style_sysmenu, #style_toolwindow )
