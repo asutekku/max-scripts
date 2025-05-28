@@ -49,11 +49,20 @@ icon: #( "Containers", 8 )
 	)
 	fn applyCheckbox checkboxCtrl section key default: false = 
 	(		
-		local val = try( execute( getINISetting The_INI_Path section key ) ) catch( default )
-		checkboxCtrl.checked = if val == undefined then
+		local iniValue = getINISetting The_INI_Path section key
+		local val = if iniValue == "" then
 			default
 		else
-			val
+			try
+		(			
+			local result = execute( iniValue )
+			if classOf result == BooleanClass then
+				result
+			else
+				default
+		)
+		catch( default )
+		checkboxCtrl.checked = val
 	)
 	fn replaceTokens name obj = 
 	(		
@@ -655,7 +664,7 @@ icon: #( "Containers", 8 )
 			free TheChildren
 			free CollisionMeshes
 			free MeshesToSelect
-			MeshesToMerge = #()
+			local MeshesToMerge = #()
 			GetAllChildren TheRoot TheChildren
 			for i in TheChildren do
 			(				
@@ -719,6 +728,7 @@ icon: #( "Containers", 8 )
 		(			
 			-- if no parent or no helper then keep a copy of the selected objects in the selection
 			local NewSelectionList = #()
+			local MeshesToMerge = #()
 			for i in SelectionList do
 			(				
 				TheRoot = GetRoot i
@@ -1327,10 +1337,18 @@ icon: #( "Containers", 8 )
 		-- Dropdown handlers
 		on ExportFormat selected idx do
 		(			
-			saveSetting "Format" "Selected_Format" idx
-			local isSupported = idx != 14
-			AddCollision.enabled = isSupported
-			CollisionType.enabled = isSupported
+			try
+			(				
+				saveSetting "Format" "Selected_Format" idx
+				local isSupported = idx != 14
+				AddCollision.enabled = isSupported
+				CollisionType.enabled = isSupported
+			)
+			catch( e )
+			
+			(				
+				messageBox( "Error in format selection: " + e.message )
+			)
 		)
 		on ExportPaths selected idx do
 		(			
@@ -1366,7 +1384,7 @@ icon: #( "Containers", 8 )
 				saveSetting "Paths" "Export_Paths" ExportPaths.items
 			)
 		)
-		on Browse pressed do
+		/*on Browse pressed do
 		(			
 			local ExportPath
 			if ExportPaths.selected != undefined then
@@ -1387,7 +1405,7 @@ icon: #( "Containers", 8 )
 				ExportPaths.items = deleteItem ExportPaths.items 1
 				setINISetting( The_INI_Path ) "Paths" "Export_Paths"( ExportPaths.items as string )
 			)
-		)
+		)*/
 		on ExportToMaxfileLocation changed ExportToMaxfileLocation_State do
 		(			
 			setINISetting( The_INI_Path ) "Checkboxes" "ExportToMaxfileLocation"( ExportToMaxfileLocation_State as string )
