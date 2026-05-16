@@ -1,4 +1,3 @@
-
 macroScript BulkExporter
 category: "Nimikko"
 tooltip: "Bulk Exporter 3.0"
@@ -96,49 +95,6 @@ icon: #( "Containers", 8 )
 		catch( default )
 		checkboxCtrl.checked = val
 	)
-	fn replaceTokens name obj = 
-	(		
-		local localTime = getLocalTime()
-		local tokenKeys = #( "%name", "%layer", "%file", "%frame", "%YYYY", "%YY", "%MM", "%DD", "%hh", "%mm", "%ss" )
-		local tokenValues = #(			
-			if isValidNode obj then
-				obj.name
-			else
-				"Unnamed",
-			try( obj.layer.name ) catch( "NoLayer" ),
-			getFilenameFile maxFileName,
-			( currentTime as integer ) as string,
-			formattedPrint localTime[1] format: "04d",
-			substring( formattedPrint localTime[1] format: "04d" ) 3 2,
-			formattedPrint localTime[2] format: "02d",
-			formattedPrint localTime[4] format: "02d",
-			formattedPrint localTime[5] format: "02d",
-			formattedPrint localTime[6] format: "02d",
-			formattedPrint localTime[7] format: "02d"
-		)
-		for i = 1 to tokenKeys.count do
-			name = substituteString name tokenKeys[i] tokenValues[i]
-		return name
-	)
-	fn ApplyNamingTemplate template obj = replaceTokens template obj
-	presetKeys = #(		
-		#( "Format", ExportFormat ),
-		#( "Collision_Prefix", CollisionType ),
-		#( "Name_Template", NameTemplate ),
-		#( "MoveToCenter", MoveToCenter ),
-		#( "ResetRotation", ResetRotation ),
-		#( "ResetX", ResetX ),
-		#( "ConvertToEditableMesh", ConvertToEditableMesh ),
-		#( "AddCollision", AddCollision ),
-		#( "MergeAllNodes", MergeAllNodes ),
-		#( "Show_Prompt", ShowPrompt ),
-		#( "ExportToMaxfileLocation", ExportToMaxfileLocation ),
-		#( "ExportByLayer", ExportByLayer ),
-		#( "MaxLayerDepth", MaxLayerDepth ),
-		#( "ReverseLayerDepth", ReverseLayerDepth ),
-		#( "AddFormatFolder", AddFormatFolder ),
-		#( "ExportToOwnFolder", ExportToOwnFolder )
-	)
 	try( destroyDialog BulkExportDialog ) catch()
 	try( destroyDialog AboutRollout ) catch()
 	rollout AboutRollout "About Bulk Exporter v3.0" width: 440 height: 510
@@ -150,19 +106,19 @@ icon: #( "Containers", 8 )
 		label lblMod "Modified by Asutekku for Nimikko" pos:[20, 70] width: 400 height: 16
 		label lblFree "Free for all use and/or modifications. Cheers!" pos:[20, 90] width: 400 height: 16
 		groupBox grpChangelog "Changelog (v3.0)" pos:[10, 115] width: 420 height: 330
-		label lblChange1 "• Added 'Reset Rotation' option" pos:[20, 135] width: 400 height: 16
-		label lblChange2 "• Export based on Layer structure (folder hierarchy)" pos:[20, 150] width: 400 height: 16
-		label lblChange3 "• Save/Load/Delete Presets support" pos:[20, 165] width: 400 height: 16
-		label lblChange4 "• Format-based subfolder option" pos:[20, 180] width: 400 height: 16
-		label lblChange5 "• Export to own folder per object" pos:[20, 195] width: 400 height: 16
-		label lblChange6 "• Live name preview and validation" pos:[20, 210] width: 400 height: 16
-		label lblChange7 "• Naming templates with tokens (e.g. %name, %layer, %YYYY)" pos:[20, 225] width: 400 height: 16
-		label lblChange8 "• New formats: STL, PLY, glTF, USD (if plugin available)" pos:[20, 240] width: 400 height: 16
-		label lblChange9 "• Modular export logic and path generation" pos:[20, 255] width: 400 height: 16
-		label lblChange10 "• Enhanced INI handling and last-used preset memory" pos:[20, 270] width: 400 height: 16
-		label lblChange11 "• Two-column UI layout and inline tooltips" pos:[20, 285] width: 400 height: 16
-		label lblChange12 "• Name validation to prevent invalid characters" pos:[20, 300] width: 400 height: 16
-		label lblChange13 "• Prompts for unsaved preset changes" pos:[20, 315] width: 400 height: 16
+		label lblChange1 "� Added 'Reset Rotation' option" pos:[20, 135] width: 400 height: 16
+		label lblChange2 "� Export based on Layer structure (folder hierarchy)" pos:[20, 150] width: 400 height: 16
+		label lblChange3 "� Save/Load/Delete Presets support" pos:[20, 165] width: 400 height: 16
+		label lblChange4 "� Format-based subfolder option" pos:[20, 180] width: 400 height: 16
+		label lblChange5 "� Export to own folder per object" pos:[20, 195] width: 400 height: 16
+		label lblChange6 "� Live name preview and validation" pos:[20, 210] width: 400 height: 16
+		label lblChange7 "� Naming templates with tokens (e.g. %name, %layer, %YYYY)" pos:[20, 225] width: 400 height: 16
+		label lblChange8 "� New formats: STL, PLY, glTF, USD (if plugin available)" pos:[20, 240] width: 400 height: 16
+		label lblChange9 "� Modular export logic and path generation" pos:[20, 255] width: 400 height: 16
+		label lblChange10 "� Enhanced INI handling and last-used preset memory" pos:[20, 270] width: 400 height: 16
+		label lblChange11 "� Two-column UI layout and inline tooltips" pos:[20, 285] width: 400 height: 16
+		label lblChange12 "� Name validation to prevent invalid characters" pos:[20, 300] width: 400 height: 16
+		label lblChange13 "� Prompts for unsaved preset changes" pos:[20, 315] width: 400 height: 16
 		groupBox grpLinks "Links" pos:[10, 455] width: 420 height: 50
 		label lblScriptSpot "Original script:" pos:[20, 470] width: 100 height: 16
 		hyperlink ScriptSpotLink "Scriptspot" pos:[130, 470] width: 200 height: 16 color:( color 0 221 241 ) hovercolor:( color 0 255 0 ) visitedcolor:( color 0 221 241 ) address: "http://www.scriptspot.com/3ds-max/scripts/batch-exporter-0"
@@ -174,34 +130,34 @@ icon: #( "Containers", 8 )
 	
 	(		
 		groupBox grpGeometry "Geometry" pos:[10, 10] width: 500 height: 100
-		label geom1 "• Move to [0,0,0] – Centers objects temporarily before export." pos:[20, 30] width: 480
-		label geom2 "• Reset Rotation – Applies neutral rotation before export." pos:[20, 45] width: 480
-		label geom3 "• Reset XForm – Clears transforms to fix scaling/rotation issues." pos:[20, 60] width: 480
-		label geom4 "• Convert to Editable Mesh – Converts to mesh before export." pos:[20, 75] width: 480
-		label geom5 "• Merge All Nodes – Merges children under a dummy/point into one mesh." pos:[20, 90] width: 480
+		label geom1 "� Move to [0,0,0] � Centers objects temporarily before export." pos:[20, 30] width: 480
+		label geom2 "� Reset Rotation � Applies neutral rotation before export." pos:[20, 45] width: 480
+		label geom3 "� Reset XForm � Clears transforms to fix scaling/rotation issues." pos:[20, 60] width: 480
+		label geom4 "� Convert to Editable Mesh � Converts to mesh before export." pos:[20, 75] width: 480
+		label geom5 "� Merge All Nodes � Merges children under a dummy/point into one mesh." pos:[20, 90] width: 480
 		groupBox grpName "Name" pos:[10, 115] width: 500 height: 70
-		label name1 "• Change name – Adds prefix/suffix for exported files only." pos:[20, 135] width: 480
-		label name2 "• Live Preview – Shows how final name will look, based on template." pos:[20, 150] width: 480
-		label name3 "• Validation – Warns on illegal characters in name (e.g. : * ? < > |)." pos:[20, 165] width: 480
+		label name1 "� Change name � Adds prefix/suffix for exported files only." pos:[20, 135] width: 480
+		label name2 "� Live Preview � Shows how final name will look, based on template." pos:[20, 150] width: 480
+		label name3 "� Validation � Warns on illegal characters in name (e.g. : * ? < > |)." pos:[20, 165] width: 480
 		groupBox grpCollision "Collision" pos:[10, 190] width: 500 height: 55
-		label col1 "• Add Collision – Combines meshes with matching prefix (e.g. UCX_)." pos:[20, 210] width: 480
+		label col1 "� Add Collision � Combines meshes with matching prefix (e.g. UCX_)." pos:[20, 210] width: 480
 		groupBox grpGeneral "General" pos:[10, 250] width: 500 height: 40
-		label gen1 "• Show prompt before export – Enables format-specific export options." pos:[20, 270] width: 480
+		label gen1 "� Show prompt before export � Enables format-specific export options." pos:[20, 270] width: 480
 		groupBox grpFormat "Format & Path" pos:[10, 295] width: 500 height: 120
-		label f1 "• Format – Choose output type: FBX, OBJ, etc." pos:[20, 315] width: 480
-		label f2 "• Path – Set export folder via dropdown or browse." pos:[20, 330] width: 480
-		label f3 "• Export To Max File Location – Overrides path with .max location." pos:[20, 345] width: 480
-		label f4 "• Max Folder – Opens .max folder in Explorer." pos:[20, 360] width: 480
-		label f5 "• Add Format Folder – Adds subfolder matching selected format." pos:[20, 375] width: 480
-		label f6 "• Export to Own Folder – Each object gets its own named folder." pos:[20, 390] width: 480
+		label f1 "� Format � Choose output type: FBX, OBJ, etc." pos:[20, 315] width: 480
+		label f2 "� Path � Set export folder via dropdown or browse." pos:[20, 330] width: 480
+		label f3 "� Export To Max File Location � Overrides path with .max location." pos:[20, 345] width: 480
+		label f4 "� Max Folder � Opens .max folder in Explorer." pos:[20, 360] width: 480
+		label f5 "� Add Format Folder � Adds subfolder matching selected format." pos:[20, 375] width: 480
+		label f6 "� Export to Own Folder � Each object gets its own named folder." pos:[20, 390] width: 480
 		groupBox grpLayer "Layer Export" pos:[10, 425] width: 500 height: 65
-		label lay1 "• Export Based on Layer Structure – Auto-creates folders from layer names." pos:[20, 445] width: 480
-		label lay2 "• Max Layer Depth – Controls how many layers deep to use." pos:[20, 460] width: 480
-		label lay3 "• Reverse Layer Depth – Uses child-most layer names first when ON." pos:[20, 475] width: 480
+		label lay1 "� Export Based on Layer Structure � Auto-creates folders from layer names." pos:[20, 445] width: 480
+		label lay2 "� Max Layer Depth � Controls how many layers deep to use." pos:[20, 460] width: 480
+		label lay3 "� Reverse Layer Depth � Uses child-most layer names first when ON." pos:[20, 475] width: 480
 		groupBox grpPresets "Export Presets" pos:[10, 495] width: 500 height: 55
-		label pre1 "• Save – Store current settings." pos:[20, 515] width: 480
-		label pre2 "• Load – Apply saved preset." pos:[150, 515] width: 480
-		label pre3 "• X – Delete selected preset." pos:[280, 515] width: 480
+		label pre1 "� Save � Store current settings." pos:[20, 515] width: 480
+		label pre2 "� Load � Apply saved preset." pos:[150, 515] width: 480
+		label pre3 "� X � Delete selected preset." pos:[280, 515] width: 480
 	)
 	fn ShowHelpRollout = 
 	(		
@@ -255,6 +211,7 @@ icon: #( "Containers", 8 )
 		local currentLoadedPreset = undefined
 		local lastLoadedSettings = #()
 		local ExportCounter = 0
+		local DialogPositionExportTool = undefined
 		-- Top bar
 		label versionLbl "v3.0" pos:[10, 10]
 		button AboutButton "About" pos:[410, 8] width: 45
@@ -276,10 +233,11 @@ icon: #( "Containers", 8 )
 		label ExportNamePreview "Preview: ---" pos:[30, 220] width: 200
 		label ExportFolderPreview "Folder: ---" pos:[30, 240] width: 200
 		-- Collision
-		groupBox grpCollision "Collision" pos:[20, 270] width: 230 height: 50
+		groupBox grpCollision "Collision" pos:[20, 270] width: 230 height: 75
 		checkbox AddCollision "Add collision" pos:[30, 290] tooltip: "Merge mesh with matching prefix (e.g. UCX_)"
 		label lblColType "Type:" pos:[130, 292] width: 30
 		dropdownlist CollisionType items: #( "UCX_", "UBX_", "USP_", "MCDCX_", "Custom..." ) pos:[165, 288] width: 55
+		checkbox AddSockets "Add sockets" pos:[30, 315] tooltip: "Export child dummies as sockets with SOCKET_ prefix"
 		-- RIGHT COLUMN ------------------------------------------
 		groupBox grpRight "Export Settings" pos:[270, 35] width: 240 height: 275
 		-- Format
@@ -340,6 +298,7 @@ icon: #( "Containers", 8 )
 				ResetX.checked,
 				ConvertToEditableMesh.checked,
 				AddCollision.checked,
+				AddSockets.checked,
 				MergeAllNodes.checked,
 				ShowPrompt.checked,
 				ExportToMaxfileLocation.checked,
@@ -368,6 +327,7 @@ icon: #( "Containers", 8 )
 			setINISetting( The_INI_Path ) sectionName "ResetX"( ResetX.checked as string )
 			setINISetting( The_INI_Path ) sectionName "ConvertToEditableMesh"( ConvertToEditableMesh.checked as string )
 			setINISetting( The_INI_Path ) sectionName "AddCollision"( AddCollision.checked as string )
+			setINISetting( The_INI_Path ) sectionName "AddSockets"( AddSockets.checked as string )
 			setINISetting( The_INI_Path ) sectionName "MergeAllNodes"( MergeAllNodes.checked as string )
 			setINISetting( The_INI_Path ) sectionName "Show_Prompt"( ShowPrompt.checked as string )
 			setINISetting( The_INI_Path ) sectionName "ExportToMaxfileLocation"( ExportToMaxfileLocation.checked as string )
@@ -431,6 +391,7 @@ icon: #( "Containers", 8 )
 			ResetX.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ResetX" ) false
 			ConvertToEditableMesh.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ConvertToEditableMesh" ) false
 			AddCollision.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "AddCollision" ) false
+			AddSockets.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "AddSockets" ) false
 			MergeAllNodes.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "MergeAllNodes" ) false
 			ShowPrompt.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "Show_Prompt" ) false
 			ExportToMaxfileLocation.checked = safeParseBoolean( getINISetting The_INI_Path sectionName "ExportToMaxfileLocation" ) false
@@ -553,6 +514,7 @@ icon: #( "Containers", 8 )
 				applyCheckbox ResetX "Checkboxes" "ResetX"
 				applyCheckbox ConvertToEditableMesh "Checkboxes" "ConvertToEditableMesh"
 				applyCheckbox AddCollision "Checkboxes" "AddCollision"
+				applyCheckbox AddSockets "Checkboxes" "AddSockets"
 				applyCheckbox MergeAllNodes "Checkboxes" "MergeAllNodes"
 				applyCheckbox ShowPrompt "Checkboxes" "Show_Prompt"
 				applyCheckbox ExportToMaxfileLocation "Checkboxes" "ExportToMaxfileLocation"
@@ -575,8 +537,8 @@ icon: #( "Containers", 8 )
 				-- First-time initialization
 				DialogPositionExportTool = getDialogPos BulkExportDialog
 				saveSetting "Dialog_Position" "DialogPositionExportTool" DialogPositionExportTool
-				temp01 = getDir #export
-				insertItem temp01 ExportPaths.items 1
+				local defaultExportDir = getDir #export
+				insertItem defaultExportDir ExportPaths.items 1
 				ExportPaths.items = makeUniqueArray ExportPaths.items
 				saveSetting "Paths" "Export_Paths" ExportPaths.items
 				ExportPresets = #()
@@ -597,19 +559,16 @@ icon: #( "Containers", 8 )
 			)
 		)
 		-- END PRESET FUNCTIONS
-		fn FindExporterClass TheClass = 
-		(			
-			Counter = 1
+		fn FindExporterClass TheClass =
+		(
+			local counter = 1
 			for i in theClasses do
-			(				
+			(
 				if i as string == TheClass then
-				(					
-					return Counter
-				)
-				Counter += 1
+					return counter
+				counter += 1
 			)
-			if Counter == theClasses.count then
-				return 0
+			return 0
 		)
 		fn GetExporterClass = 
 		(			
@@ -680,14 +639,101 @@ icon: #( "Containers", 8 )
 			(				
 				ClearSelection()
 				local colPrefix = CollisionType.selected
-				execute( "select $" + colPrefix + obj.name + "*" )
-				for i in selection do
+				local objName = obj.name
+				local objectsToSelect = #(obj)
+				
+				-- Find collision meshes without using wildcard selection to avoid auto-renaming
+				local foundCollisionMeshes = #()
+				for sceneObj in objects do
+				(
+					if matchPattern sceneObj.name pattern:(colPrefix + objName + "*") then
+					(
+						append foundCollisionMeshes sceneObj
+					)
+				)
+				
+				-- Apply sequential numbering to collision meshes with identical names
+				local nameGroups = #() -- Array to track name groups
+				for colMesh in foundCollisionMeshes do
+				(
+					local baseName = colPrefix + objName
+					local currentName = colMesh.name
+					
+					-- Check if this is an exact match to the base name (no suffix)
+					if currentName == baseName then
+					(
+						-- Find how many meshes already have this base name
+						local count = 0
+						for otherMesh in foundCollisionMeshes do
+						(
+							if matchPattern otherMesh.name pattern:(baseName + "*") then
+								count += 1
+						)
+						
+						-- If there are multiple meshes with the same base name, add sequential numbering
+						if count > 1 then
+						(
+							local meshIndex = 1
+							for otherMesh in foundCollisionMeshes do
+							(
+								if matchPattern otherMesh.name pattern:(baseName + "*") then
+								(
+									-- Only rename if it's the exact base name (no existing suffix)
+									if otherMesh.name == baseName then
+									(
+										local newName = baseName + "_" + (formattedPrint meshIndex format:"02d")
+										-- Make sure this new name doesn't already exist
+										while (getNodeByName newName) != undefined do
+										(
+											meshIndex += 1
+											newName = baseName + "_" + (formattedPrint meshIndex format:"02d")
+										)
+										otherMesh.name = newName
+										meshIndex += 1
+									)
+								)
+							)
+						)
+					)
+				)
+				
+				-- Now process the found collision meshes
+				for i in foundCollisionMeshes do
 				(					
 					append InitialUCXPos i.pos
 					i.pos = obj.pos
 					append UcxMeshes i
 				)
-				select( UcxMeshes + obj )
+				
+				-- Add collision meshes to selection
+				objectsToSelect = objectsToSelect + UcxMeshes
+				
+				-- Handle socket export - find child dummies and add them to selection
+				if AddSockets.checked then
+				(					
+					-- Find all children of the mesh
+					local socketDummies = #()
+					for child in obj.children do
+					(						
+						-- Check if it's a dummy
+						if classOf child == Dummy then
+						(							
+							-- Check if it already has SOCKET_ prefix
+							if not matchPattern child.name pattern:"SOCKET_*" then
+								child.name = "SOCKET_" + child.name
+							
+							-- Add to socket list
+							append socketDummies child
+						)
+					)
+					
+					-- Add socket dummies to selection
+					if socketDummies.count > 0 then
+						objectsToSelect = objectsToSelect + socketDummies
+				)
+				
+				-- Select all objects (mesh + collision + sockets)
+				select objectsToSelect
 			)
 		)
 		fn GetAllChildren obj TheChildren = -- Get all the children of obj and append them to TheChildren
@@ -700,18 +746,20 @@ icon: #( "Containers", 8 )
 			)
 		)
 		fn MergeChildren TheRoot CollisionMeshes = -- Merge all the children of TheRoot and return them as a collapsed mesh,  and store collision meshes in CollisionMeshes (snap collision pivot point on root)
-		(			
+		(
 			free TheChildren
 			free CollisionMeshes
 			free MeshesToSelect
 			local MeshesToMerge = #()
+			local NewObj
+			local FirstObj
 			GetAllChildren TheRoot TheChildren
 			for i in TheChildren do
-			(				
+			(
 				if CollisionType.selected != "" and matchPattern i.name pattern:( CollisionType.selected + "*" ) then
-				(					
+				(
 					if AddCollision.checked then
-					(						
+					(
 						NewObj = snapshot i
 						NewObj.name = i.name
 						NewObj.parent = TheRoot
@@ -719,17 +767,23 @@ icon: #( "Containers", 8 )
 						appendifunique CollisionMeshes NewObj
 					)
 				)
+				else if AddSockets.checked and (classOf i == Dummy) then
+				(
+					local socketName = i.name
+					if not matchPattern socketName pattern:"SOCKET_*" then
+						i.name = "SOCKET_" + socketName
+					append MeshesToSelect i
+				)
 				else
-				(					
+				(
 					if MergeAllNodes.checked == true then
-					(						
+					(
 						if superClassOf i != GeometryClass or( superClassOf i == GeometryClass and findString i.name "_" == 1 ) then
+						(
 							-- Ignore meshes with name starting with "_"
-						(							
-							-- nothing ^^
 						)
 						else
-						(							
+						(
 							NewObj = snapshot i
 							NewObj.parent = none
 							resetxform NewObj
@@ -740,19 +794,18 @@ icon: #( "Containers", 8 )
 						)
 					)
 					else
-					(						
+					(
 						if findString i.name "_" != 1 then
-							append MeshesToSelect i -- Ignore meshes with name starting with "_"
+							append MeshesToSelect i
 					)
 				)
 			)
+
 			if MergeAllNodes.checked == true then
-			(				
+			(
 				FirstObj = MeshesToMerge[1]
 				for i = 2 to MeshesToMerge.count do
-				(					
 					FirstObj.attach MeshesToMerge[i] FirstObj
-				)
 				FirstObj.parent = none
 				FirstObj.pivot = TheRoot.pos
 				FirstObj.transform = TheRoot.transform
@@ -760,34 +813,23 @@ icon: #( "Containers", 8 )
 				return FirstObj
 			)
 			else
-			(				
 				return TheRoot
-			)
 		)
 		fn SortSelection SelectionList = -- If any of the selected objects is linked to a dummy or a point helper, then keep this helper only in the selection
-		(			
-			-- if no parent or no helper then keep a copy of the selected objects in the selection
+		(
 			local NewSelectionList = #()
-			local MeshesToMerge = #()
 			for i in SelectionList do
-			(				
-				TheRoot = GetRoot i
+			(
+				local TheRoot = GetRoot i
 				if classOf( TheRoot )== Dummy or classOf( TheRoot )== Point then
-				(					
 					appendifunique NewSelectionList TheRoot
-				)
 				else
-				(					
-					-- Store the original layer
+				(
 					local originalLayer = i.layer
-					-- Make a copy
-					NewObj = copy i
+					local NewObj = copy i
 					NewObj.name = i.name
-					-- Ensure the copy is on the same layer as the original
 					if originalLayer != undefined then
-					(						
 						originalLayer.addnode NewObj
-					)
 					append NewSelectionList NewObj
 				)
 			)
@@ -890,28 +932,23 @@ icon: #( "Containers", 8 )
 				return ""
 			)
 		)
-		fn CreateLayerDirectory basePath layerPath = 
-		(			
+		fn CreateLayerDirectory basePath layerPath =
+		(
 			if layerPath != "" then
-			(				
+			(
 				local fullPath = basePath + "\\" + layerPath
-				-- Create directory if it doesn't exist
 				if not doesFileExist fullPath then
-				(					
-					local result = makeDir fullPath all: true
-				)
-				else
-					-- Return full path
+					makeDir fullPath all: true
 				return fullPath
 			)
 			else
-			(				
+			(
 				return basePath
 			)
 		)
 		fn ValidateName name = 
 		(			
-			local invalidChars = #( "/", ":", "*", "?", "<", ">", "|", "/", "\\" )
+			local invalidChars = #( "/", ":", "*", "?", "<", ">", "|", "\\" )
 			for c in invalidChars do
 			(				
 				if findString name c != undefined do
@@ -1012,9 +1049,20 @@ icon: #( "Containers", 8 )
 			)
 			-- Determine base export path
 			if ExportToMaxfileLocation.checked then
+			(
 				TheExportPath = maxFilePath as string
+			)
 			else
-				TheExportPath = ExportPaths.selected as string
+			(
+				-- Validate that ExportPaths.selected is a valid string path
+				if ExportPaths.selected != undefined and classOf ExportPaths.selected == String and ExportPaths.selected != "" then
+					TheExportPath = ExportPaths.selected
+				else
+				(
+					messageBox "No valid export path selected. Please select a valid export path."
+					return false
+				)
+			)
 			-- Add filetype folder (if selected and valid)
 			if AddFormatFolder.checked do
 			(				
@@ -1051,11 +1099,12 @@ icon: #( "Containers", 8 )
 			-- Final file path with name
 			local TheObjName = finalExportPath + "\\" + baseName
 			TheObjName = AddFormatToName TheObjName
-			-- Collision support
+			
+			-- Collision and socket support
+			local UcxMeshes = #()
+			local InitialUCXPos = #()
 			if AddCollision.checked then
-			(				
-				UcxMeshes = #()
-				InitialUCXPos = #()
+			(
 				SelectObjAndCollisionMeshes obj UcxMeshes InitialUCXPos
 			)
 			else
@@ -1063,8 +1112,30 @@ icon: #( "Containers", 8 )
 				if not MergeAllNodes.checked and LinkedToDummy then
 					select MeshesToSelect
 				else
-					select obj
+				(					
+					-- Handle socket export for regular mesh objects
+					if AddSockets.checked then
+					(						
+						local objectsToSelect = #(obj)
+						-- Find child dummies and add them to selection
+						for child in obj.children do
+						(							
+							if classOf child == Dummy then
+							(								
+								-- Check if it already has SOCKET_ prefix
+								if not matchPattern child.name pattern:"SOCKET_*" then
+									child.name = "SOCKET_" + child.name
+								
+								append objectsToSelect child
+							)
+						)
+						select objectsToSelect
+					)
+					else
+						select obj
+				)
 			)
+			
 			-- Export logic
 			if ExporterClass == -2 and ExportFormat.selection != 2 then
 			(				
@@ -1141,28 +1212,19 @@ icon: #( "Containers", 8 )
 			)
 			return true
 		)
-		fn PrepareSelection = 
-		(			
-			if selection.count > 0 then
-			(				
-				TheSelection = selection as array
-			)
-			else
-			(				
-				TheSelection = for node in TheSelection
-				where
-					isValidNode node collect
-					node
-			)
-			SortSelection TheSelection
-		)
-		fn ExportVRSceneObjects selectedObjs = 
-		(			
+		fn ExportVRSceneObjects selectedObjs =
+		(
 			-- Determine export path
-			TheExportPath = if ExportToMaxfileLocation.checked then
-				maxFilePath
+			local basePath = if ExportToMaxfileLocation.checked then
+				maxFilePath as string
 			else
 				ExportPaths.selected
+			if basePath == undefined or classOf basePath != String or basePath == "" then
+			(
+				messageBox "No valid export path selected. Please select a valid export path."
+				return false
+			)
+			TheExportPath = basePath
 			-- Hide everything in the scene
 			local UnHiddenObj = #()
 			for o in objects
@@ -1231,16 +1293,17 @@ icon: #( "Containers", 8 )
 					for j in TheChildren do
 						j.isHidden = false
 				)
-				-- Handle layer-based export path
+				-- Handle layer-based export path (per-object, without mutating basePath)
+				local objExportPath = basePath
 				if ExportByLayer.checked do
-				(					
+				(
 					local layerPath = GetLayerPath obj MaxLayerDepth.value ReverseLayerDepth.checked
 					if layerPath != "" do
-						TheExportPath = CreateLayerDirectory TheExportPath layerPath
+						objExportPath = CreateLayerDirectory objExportPath layerPath
 				)
 				-- Build and validate name
 				local baseName = ApplyNamingTemplate NameTemplate.text obj
-				local exportPath = TheExportPath + "\\" + baseName
+				local exportPath = objExportPath + "\\" + baseName
 				exportPath = AddFormatToName exportPath
 				if not ValidateName baseName then
 				(					
@@ -1321,10 +1384,15 @@ icon: #( "Containers", 8 )
 		-- **************************************************  EVENTS  ***********************************************************************
 		-- ***********************************************************************************************************************************
 		on BulkExportDialog open do
-		(			
+		(
 			windows.sendmessage ExportPaths.hwnd[1] 352 450 0
 			if NameTemplate.text == "" then
 				NameTemplate.text = "%name"
+			-- Expose preview refresh to global callbacks so selection/rename updates the preview
+			global NimikkoBulkExporter_RefreshPreview = UpdateNamePreview
+			callbacks.removeScripts id: #NimikkoBulkExporterPreview
+			callbacks.addScript #selectionSetChanged "try(NimikkoBulkExporter_RefreshPreview())catch()" id: #NimikkoBulkExporterPreview
+			callbacks.addScript #nodeRenamed "try(NimikkoBulkExporter_RefreshPreview())catch()" id: #NimikkoBulkExporterPreview
 			GetINISettings()
 			if DialogPositionExportTool != undefined do
 				SetDialogPos BulkExportDialog DialogPositionExportTool
@@ -1401,8 +1469,10 @@ icon: #( "Containers", 8 )
 			UpdateNamePreview()
 		)
 		on BulkExportDialog close do
-		(			
+		(
 			setINISetting The_INI_Path "Dialog_Position" "DialogPositionExportTool"( GetDialogPos BulkExportDialog as string )
+			callbacks.removeScripts id: #NimikkoBulkExporterPreview
+			global NimikkoBulkExporter_RefreshPreview = undefined
 		)
 		-- Checkbox handlers
 		on MoveToCenter changed val do
@@ -1421,6 +1491,8 @@ icon: #( "Containers", 8 )
 		)
 		on AddCollision changed val do
 			saveSetting "Checkboxes" "AddCollision" val
+		on AddSockets changed val do
+			saveSetting "Checkboxes" "AddSockets" val
 		on ExportToMaxfileLocation changed val do
 		(			
 			saveSetting "Checkboxes" "ExportToMaxfileLocation" val
@@ -1469,11 +1541,15 @@ icon: #( "Containers", 8 )
 			UpdateFolderPreview()
 		)
 		on ExportPaths selected idx do
-		(			
-			insertItem ExportPaths.selected ExportPaths.items 1
-			ExportPaths.items = makeUniqueArray ExportPaths.items
-			ExportPaths.selection = 1
-			saveSetting "Paths" "Export_Paths" ExportPaths.items
+		(
+			if idx != 1 do
+			(
+				-- Bubble selected path to the top of the recent list
+				insertItem ExportPaths.selected ExportPaths.items 1
+				ExportPaths.items = makeUniqueArray ExportPaths.items
+				ExportPaths.selection = 1
+				saveSetting "Paths" "Export_Paths" ExportPaths.items
+			)
 			UpdateFolderPreview()
 		)
 		on ExportPaths rightClick do
@@ -1482,17 +1558,19 @@ icon: #( "Containers", 8 )
 				shellLaunch "explorer.exe" ExportPaths.selected
 		)
 		on Browse pressed do
-		(			
+		(
 			local initial = if ExportPaths.selected != undefined then
 				ExportPaths.selected
 			else
 				getDir #export
 			local ExportPath = getSavePath initialDir: initial
 			if ExportPath != undefined do
-			(				
+			(
 				insertItem ExportPath ExportPaths.items 1
 				ExportPaths.items = makeUniqueArray ExportPaths.items
+				ExportPaths.selection = 1
 				saveSetting "Paths" "Export_Paths" ExportPaths.items
+				UpdateFolderPreview()
 			)
 		)
 		on Browse rightClick do
@@ -1525,25 +1603,11 @@ icon: #( "Containers", 8 )
 				setINISetting( The_INI_Path ) "Paths" "Export_Paths"( ExportPaths.items as string )
 			)
 		)*/
-		on ExportToMaxfileLocation changed ExportToMaxfileLocation_State do
-		(			
-			setINISetting( The_INI_Path ) "Checkboxes" "ExportToMaxfileLocation"( ExportToMaxfileLocation_State as string )
-			if ExportToMaxfileLocation.checked then
-			(				
-				ExportPaths.enabled = false
-				Browse.enabled = false
-			)
-			else
-			(				
-				ExportPaths.enabled = true
-				Browse.enabled = true
-			)
-		)
 		on OpenMaxfileLocation pressed do
-		(			
+		(
 			if maxFilePath != undefined and maxFilePath != "" then
-			(				
-				TheCompleteMaxFilePath = maxFilePath + maxFileName
+			(
+				local TheCompleteMaxFilePath = maxFilePath + maxFileName
 				shellLaunch "explorer.exe"( "/select, " + TheCompleteMaxFilePath as string )
 			)
 			else
@@ -1576,8 +1640,8 @@ icon: #( "Containers", 8 )
 				local validPath = ExportPaths.selected != undefined or ExportToMaxfileLocation.checked
 				local validSelection = SelectedObj.count > 0
 				if exportValid and validPath and validSelection then
-				(					
-					ExporterClass = GetExporterClass()
+				(
+					local ExporterClass = GetExporterClass()
 					if ExporterClass == undefined or ExporterClass == 0 then
 					(						
 						messageBox "Export plugin not found!"
@@ -1733,8 +1797,6 @@ icon: #( "Containers", 8 )
 		on HelpButton pressed do
 			ShowHelpRollout()
 	)
-	callbacks.removeScripts id: #NamePreviewCallback
-	callbacks.addScript #SelectionSetChanged "try(BulkExportDialog.UpdateNamePreview(); BulkExportDialog.UpdateFolderPreview())catch()" id: #NamePreviewCallback
 	on execute do
 	(		
 		CreateDialog BulkExportDialog style: #( #style_titlebar, #style_sysmenu, #style_toolwindow )
